@@ -46,7 +46,7 @@ export default async function EmargerPage() {
   return (
     <EmargementClient
       enseignants={enseignants ?? []}
-      matieres={matieres ?? []}
+      matieres={(matieres ?? []) as any}
       emargements={emargements}
       tableError={tableError}
     />
