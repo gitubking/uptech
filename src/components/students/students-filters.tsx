@@ -8,8 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Search, X } from 'lucide-react'
 
 interface Props {
-  filieres: { id: string; nom: string; code: string }[]
+  filieres: { id: string; nom: string; code: string; type_formation?: string | null }[]
   niveaux: { id: string; nom: string; filiere_id: string }[]
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  academique: 'Académique',
+  certifiante: 'Certifiante',
+  acceleree: 'Accélérée',
 }
 
 export function StudentsFilters({ filieres, niveaux }: Props) {
@@ -18,6 +24,7 @@ export function StudentsFilters({ filieres, niveaux }: Props) {
   const searchParams = useSearchParams()
 
   const search = searchParams.get('search') ?? ''
+  const type_formation = searchParams.get('type_formation') ?? ''
   const filiere_id = searchParams.get('filiere_id') ?? ''
   const niveau_id = searchParams.get('niveau_id') ?? ''
   const statut = searchParams.get('statut') ?? ''
@@ -26,14 +33,17 @@ export function StudentsFilters({ filieres, niveaux }: Props) {
     const params = new URLSearchParams(searchParams.toString())
     if (value) params.set(key, value)
     else params.delete(key)
+    if (key === 'type_formation') { params.delete('filiere_id'); params.delete('niveau_id') }
     if (key === 'filiere_id') params.delete('niveau_id')
     router.push(`${pathname}?${params.toString()}`)
   }, [searchParams, pathname, router])
 
   const clearAll = () => router.push(pathname)
 
-  const hasFilters = search || filiere_id || niveau_id || statut
-  const filteredNiveaux = filiere_id ? niveaux.filter(n => n.filiere_id === filiere_id) : niveaux
+  const hasFilters = search || type_formation || filiere_id || niveau_id || statut
+  const filteredFilieres = type_formation ? filieres.filter(f => f.type_formation === type_formation) : filieres
+  const filteredNiveaux = filiere_id ? niveaux.filter(n => n.filiere_id === filiere_id) : []
+  const showNiveaux = type_formation === 'academique' && filiere_id
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -55,6 +65,19 @@ export function StudentsFilters({ filieres, niveaux }: Props) {
           />
         </div>
 
+        {/* Type de formation */}
+        <Select value={type_formation} onValueChange={(v) => updateParam('type_formation', v === 'all' ? '' : v)}>
+          <SelectTrigger className="w-36 h-9 bg-gray-50 border-gray-200 text-sm">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous types</SelectItem>
+            {Object.entries(TYPE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         {/* Filière */}
         <Select value={filiere_id} onValueChange={(v) => updateParam('filiere_id', v === 'all' ? '' : v)}>
           <SelectTrigger className="w-44 h-9 bg-gray-50 border-gray-200 text-sm">
@@ -62,13 +85,14 @@ export function StudentsFilters({ filieres, niveaux }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes les filières</SelectItem>
-            {filieres.map(f => (
+            {filteredFilieres.map(f => (
               <SelectItem key={f.id} value={f.id}>{f.code} — {f.nom}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Niveau */}
+        {/* Niveau — uniquement pour académique + filière sélectionnée */}
+        {showNiveaux && (
         <Select value={niveau_id} onValueChange={(v) => updateParam('niveau_id', v === 'all' ? '' : v)}>
           <SelectTrigger className="w-36 h-9 bg-gray-50 border-gray-200 text-sm">
             <SelectValue placeholder="Niveau" />
@@ -80,6 +104,7 @@ export function StudentsFilters({ filieres, niveaux }: Props) {
             ))}
           </SelectContent>
         </Select>
+        )}
 
         {/* Statut */}
         <Select value={statut} onValueChange={(v) => updateParam('statut', v === 'all' ? '' : v)}>

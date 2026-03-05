@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 // ─── Récupérer tous les étudiants ───────────────────────────────────────────
 export async function getStudents(filters?: {
   search?: string
+  type_formation?: string
   filiere_id?: string
   niveau_id?: string
   statut?: string
@@ -17,7 +18,7 @@ export async function getStudents(filters?: {
     .from('etudiants')
     .select(`
       *,
-      filiere:filieres(id, nom, code),
+      filiere:filieres(id, nom, code, type_formation),
       niveau:niveaux(id, nom),
       annee_academique:annees_academiques(id, libelle)
     `)

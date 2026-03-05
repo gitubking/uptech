@@ -22,6 +22,7 @@ const STATUT_CONFIG: Record<string, { label: string; color: string }> = {
 interface PageProps {
   searchParams: Promise<{
     search?: string
+    type_formation?: string
     filiere_id?: string
     niveau_id?: string
     statut?: string
