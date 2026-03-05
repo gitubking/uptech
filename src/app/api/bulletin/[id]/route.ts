@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { renderToBuffer } from '@react-pdf/renderer'
+import { renderToBuffer, DocumentProps } from '@react-pdf/renderer'
 import { getBulletin, getActiveAnnee } from '@/app/actions/grades'
 import { BulletinPDF } from '@/components/grades/bulletin-pdf'
 import React from 'react'
@@ -55,7 +55,7 @@ export async function GET(
         anneeLibelle: annee?.libelle ?? '',
         moyenne,
         totalCredits,
-      }) as React.ReactElement
+      }) as React.ReactElement<DocumentProps>
     )
 
     const nom = `${etudiant.nom}_${etudiant.prenom}`.replace(/\s+/g, '_')
