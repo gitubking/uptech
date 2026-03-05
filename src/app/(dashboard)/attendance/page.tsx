@@ -93,7 +93,7 @@ export default async function AttendancePage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {recentSessions.map((s, i) => {
-                const m = s.matiere as { id: string; nom: string; code: string; filiere?: { nom: string } | null; niveau?: { nom: string } | null } | null
+                const m = s.matiere as unknown as { id: string; nom: string; code: string; filiere?: { nom: string } | null; niveau?: { nom: string } | null } | null
                 if (!m) return null
                 const dateStr = new Date(s.date_cours + 'T00:00:00').toLocaleDateString('fr-FR', {
                   day: '2-digit', month: 'short', year: 'numeric',
