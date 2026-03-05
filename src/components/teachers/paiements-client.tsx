@@ -133,7 +133,7 @@ export function PaiementsClient({ paiements, typeFormations, hasTypeFormations }
             </div>
             <span className="text-sm text-gray-500">Total à payer</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{fmt(totalMontant)} FC</p>
+          <p className="text-2xl font-bold text-gray-900">{fmt(totalMontant)} FCFA</p>
           <p className="text-xs text-gray-400 mt-0.5">Tous enseignants confondus</p>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function PaiementsClient({ paiements, typeFormations, hasTypeFormations }
               <span className="text-gray-600">{tf.nom}</span>
               <span className="text-gray-400">·</span>
               <span className="font-semibold text-gray-700">
-                {fmt(Number(tf.tarif_horaire))} FC{METHODE_LABELS[tf.methode_paiement] ?? ''}
+                {fmt(Number(tf.tarif_horaire))} FCFA{METHODE_LABELS[tf.methode_paiement] ?? ''}
               </span>
             </div>
           ))}
@@ -197,7 +197,7 @@ export function PaiementsClient({ paiements, typeFormations, hasTypeFormations }
                     <div className="min-w-[100px]">
                       <p className="text-xs text-gray-400">Montant dû</p>
                       <p className={`font-bold text-base ${p.totalMontant > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
-                        {p.totalMontant > 0 ? `${fmt(p.totalMontant)} FC` : '—'}
+                        {p.totalMontant > 0 ? `${fmt(p.totalMontant)} FCFA` : '—'}
                       </p>
                     </div>
                     {hasSeances && (
@@ -251,12 +251,12 @@ export function PaiementsClient({ paiements, typeFormations, hasTypeFormations }
                             </td>
                             <td className="py-2.5 px-4 text-right text-xs text-gray-500 tabular-nums">
                               {s.tarif_horaire > 0
-                                ? `${fmt(s.tarif_horaire)} FC${METHODE_LABELS[s.methode_paiement] ?? ''}`
+                                ? `${fmt(s.tarif_horaire)} FCFA${METHODE_LABELS[s.methode_paiement] ?? ''}`
                                 : '—'}
                             </td>
                             <td className="py-2.5 px-5 text-right">
                               <span className={`font-semibold text-sm tabular-nums ${s.montant > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
-                                {s.montant > 0 ? `${fmt(s.montant)} FC` : '—'}
+                                {s.montant > 0 ? `${fmt(s.montant)} FCFA` : '—'}
                               </span>
                             </td>
                           </tr>
@@ -272,7 +272,7 @@ export function PaiementsClient({ paiements, typeFormations, hasTypeFormations }
                           </td>
                           <td></td>
                           <td className="py-2.5 px-5 text-right font-bold text-emerald-700 text-sm tabular-nums">
-                            {fmt(p.totalMontant)} FC
+                            {fmt(p.totalMontant)} FCFA
                           </td>
                         </tr>
                       </tfoot>

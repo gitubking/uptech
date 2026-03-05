@@ -449,7 +449,7 @@ export function SettingsClient({ annees: initialAnnees, profile, userEmail, type
                     <div className="flex items-center gap-2">
                       <Banknote className="h-4 w-4 text-emerald-600 shrink-0" />
                       <span className="font-bold text-gray-900 text-sm">
-                        {Number(tf.tarif_horaire).toLocaleString('fr-FR')} FC
+                        {Number(tf.tarif_horaire).toLocaleString('fr-FR')} FCFA
                       </span>
                       <span className="text-xs text-gray-500">
                         / {tf.methode_paiement === 'horaire' ? 'heure'

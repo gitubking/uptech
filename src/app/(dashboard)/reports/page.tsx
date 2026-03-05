@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 
 function formatMoney(n: number) {
-  return new Intl.NumberFormat('fr-CD').format(n) + ' FC'
+  return new Intl.NumberFormat('fr-SN').format(n) + ' FCFA'
 }
 
 export default async function ReportsPage() {

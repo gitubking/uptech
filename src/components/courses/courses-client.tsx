@@ -595,7 +595,7 @@ export function CoursesClient({ filieres, niveaux, matieres, enseignants, etudia
                             <span className="font-mono text-xs mr-1 text-emerald-600">{tf.code}</span>
                             {tf.nom}
                             <span className="text-gray-400 ml-1 text-xs">
-                              ({Number(tf.tarif_horaire).toLocaleString('fr-FR')} FC/{tf.methode_paiement === 'horaire' ? 'h' : 'séance'})
+                              ({Number(tf.tarif_horaire).toLocaleString('fr-FR')} FCFA/{tf.methode_paiement === 'horaire' ? 'h' : 'séance'})
                             </span>
                           </SelectItem>
                         ))}

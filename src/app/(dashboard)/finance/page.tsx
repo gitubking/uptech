@@ -30,7 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 function formatMoney(amount: number) {
-  return new Intl.NumberFormat('fr-CD', { style: 'decimal' }).format(amount) + ' FC'
+  return new Intl.NumberFormat('fr-SN', { style: 'decimal' }).format(amount) + ' FCFA'
 }
 
 export default async function FinancePage({ searchParams }: Props) {
