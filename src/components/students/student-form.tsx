@@ -194,7 +194,7 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-purple-600" />
-            Inscription académique
+            Inscription étudiant
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
