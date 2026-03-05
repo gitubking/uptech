@@ -37,6 +37,9 @@ export function TeacherForm({ defaultValues, teacherId }: Props) {
       if (data.error) {
         setError(data.error)
       } else {
+        if (data.inviteError) {
+          setError(`Enseignant créé, mais invitation email échouée : ${data.inviteError}`)
+        }
         router.push(teacherId ? `/teachers/${teacherId}` : `/teachers/${data.id}`)
       }
     } catch {
