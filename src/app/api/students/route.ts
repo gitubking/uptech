@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
       telephone_parent: (formData.get('telephone_parent') as string) ?? '',
       email_parent: (formData.get('email_parent') as string) ?? '',
       filiere_id: (formData.get('filiere_id') as string) ?? '',
-      niveau_id: (formData.get('niveau_id') as string) ?? '',
+      niveau_id: (formData.get('niveau_id') as string) || null,
       annee_academique_id: (formData.get('annee_academique_id') as string) ?? '',
       statut: (formData.get('statut') as string) || 'preinscrit',
-      niveau_entree: (formData.get('niveau_entree') as string) || 'bfem',
+      niveau_entree: (formData.get('niveau_entree') as string) || null,
       matricule: '',
     }
 
@@ -93,9 +93,9 @@ export async function PUT(request: NextRequest) {
       telephone_parent: (formData.get('telephone_parent') as string) ?? '',
       email_parent: (formData.get('email_parent') as string) ?? '',
       filiere_id: (formData.get('filiere_id') as string) ?? '',
-      niveau_id: (formData.get('niveau_id') as string) ?? '',
+      niveau_id: (formData.get('niveau_id') as string) || null,
       statut: (formData.get('statut') as string) ?? '',
-      niveau_entree: (formData.get('niveau_entree') as string) || 'bfem',
+      niveau_entree: (formData.get('niveau_entree') as string) || null,
     }
 
     const { error } = await db.from('etudiants').update(data).eq('id', id)
