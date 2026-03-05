@@ -28,12 +28,12 @@ export default async function CoursesPage() {
 
   return (
     <CoursesClient
-      filieres={data.filieres as Parameters<typeof CoursesClient>[0]['filieres']}
-      niveaux={data.niveaux as Parameters<typeof CoursesClient>[0]['niveaux']}
-      matieres={data.matieres as Parameters<typeof CoursesClient>[0]['matieres']}
+      filieres={data.filieres as unknown as Parameters<typeof CoursesClient>[0]['filieres']}
+      niveaux={data.niveaux as unknown as Parameters<typeof CoursesClient>[0]['niveaux']}
+      matieres={data.matieres as unknown as Parameters<typeof CoursesClient>[0]['matieres']}
       enseignants={data.enseignants}
-      etudiants={data.etudiants as Parameters<typeof CoursesClient>[0]['etudiants']}
-      typeFormations={data.typeFormations as Parameters<typeof CoursesClient>[0]['typeFormations']}
+      etudiants={data.etudiants as unknown as Parameters<typeof CoursesClient>[0]['etudiants']}
+      typeFormations={data.typeFormations as unknown as Parameters<typeof CoursesClient>[0]['typeFormations']}
     />
   )
 }

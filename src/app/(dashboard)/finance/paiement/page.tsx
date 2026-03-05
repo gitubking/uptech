@@ -26,7 +26,7 @@ export default async function NouveauPaiementPage() {
       </div>
 
       <PaiementForm
-        etudiants={etudiants as Parameters<typeof PaiementForm>[0]['etudiants']}
+        etudiants={etudiants as unknown as Parameters<typeof PaiementForm>[0]['etudiants']}
         anneeActive={anneeActive}
       />
     </div>

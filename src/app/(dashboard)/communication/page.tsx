@@ -43,7 +43,7 @@ export default async function CommunicationPage() {
 
   return (
     <CommunicationClient
-      annonces={annonces as Parameters<typeof CommunicationClient>[0]['annonces']}
+      annonces={annonces as unknown as Parameters<typeof CommunicationClient>[0]['annonces']}
       tableError={tableError}
     />
   )

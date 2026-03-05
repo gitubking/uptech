@@ -84,9 +84,9 @@ export default async function SaisirAttendancePage({ searchParams }: Props) {
       </div>
 
       <AttendanceTable
-        matiere={result.matiere as Parameters<typeof AttendanceTable>[0]['matiere']}
+        matiere={result.matiere as unknown as Parameters<typeof AttendanceTable>[0]['matiere']}
         date_cours={date}
-        rows={result.rows as Parameters<typeof AttendanceTable>[0]['rows']}
+        rows={result.rows as unknown as Parameters<typeof AttendanceTable>[0]['rows']}
       />
     </div>
   )

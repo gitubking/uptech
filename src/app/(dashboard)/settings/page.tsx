@@ -28,10 +28,10 @@ export default async function SettingsPage() {
 
   return (
     <SettingsClient
-      annees={data.annees as Parameters<typeof SettingsClient>[0]['annees']}
-      profile={data.profile as Parameters<typeof SettingsClient>[0]['profile']}
+      annees={data.annees as unknown as Parameters<typeof SettingsClient>[0]['annees']}
+      profile={data.profile as unknown as Parameters<typeof SettingsClient>[0]['profile']}
       userEmail={data.userEmail}
-      typeFormations={data.typeFormations as Parameters<typeof SettingsClient>[0]['typeFormations']}
+      typeFormations={data.typeFormations as unknown as Parameters<typeof SettingsClient>[0]['typeFormations']}
     />
   )
 }
