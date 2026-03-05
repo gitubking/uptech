@@ -31,9 +31,21 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
   const [statut, setStatut] = useState(defaultValues?.statut ?? 'preinscrit')
   const [niveauEntree, setNiveauEntree] = useState(defaultValues?.niveau_entree ?? 'bfem')
 
+  const [typeFormation, setTypeFormation] = useState(() => {
+    if (!defaultValues?.filiere_id) return ''
+    return filieres.find(f => f.id === defaultValues.filiere_id)?.type_formation ?? ''
+  })
+
   const selectedFiliereData = filieres.find(f => f.id === selectedFiliere)
   const isAcademique = !selectedFiliereData || selectedFiliereData.type_formation === 'academique' || !selectedFiliereData.type_formation
+  const filteredFilieres = typeFormation ? filieres.filter(f => f.type_formation === typeFormation) : []
   const filteredNiveaux = niveaux.filter(n => n.filiere_id === selectedFiliere)
+
+  const TYPE_LABELS: Record<string, string> = {
+    academique: 'Académique',
+    certifiante: 'Certifiante',
+    acceleree: 'Accélérée',
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -189,34 +201,60 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700">Filière <span className="text-red-500">*</span></Label>
-              <Select value={filiere_id} onValueChange={(v) => { setFiliereId(v); setSelectedFiliere(v); setNiveauId('') }} required>
+              <Label className="text-sm font-medium text-gray-700">Type de formation <span className="text-red-500">*</span></Label>
+              <Select
+                value={typeFormation}
+                onValueChange={(v) => {
+                  setTypeFormation(v)
+                  setFiliereId('')
+                  setSelectedFiliere('')
+                  setNiveauId('')
+                }}
+              >
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Choisir une filière" />
+                  <SelectValue placeholder="Choisir un type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filieres.map(f => (
+                  {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">Filière <span className="text-red-500">*</span></Label>
+              <Select
+                value={filiere_id}
+                onValueChange={(v) => { setFiliereId(v); setSelectedFiliere(v); setNiveauId('') }}
+                disabled={!typeFormation}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder={typeFormation ? 'Choisir une filière' : "Choisir d'abord un type"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredFilieres.map(f => (
                     <SelectItem key={f.id} value={f.id}>{f.code} — {f.nom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {isAcademique && (
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium text-gray-700">Niveau <span className="text-red-500">*</span></Label>
-                <Select value={niveau_id} onValueChange={setNiveauId} disabled={!filiere_id} required>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder={filiere_id ? 'Choisir un niveau' : "Choisir d'abord une filière"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredNiveaux.map(n => (
-                      <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
+
+          {isAcademique && filiere_id && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">Niveau <span className="text-red-500">*</span></Label>
+              <Select value={niveau_id} onValueChange={setNiveauId} required>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Choisir un niveau" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredNiveaux.map(n => (
+                    <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {isAcademique && (
             <div className="space-y-1.5">
