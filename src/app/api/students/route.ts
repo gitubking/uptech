@@ -68,7 +68,6 @@ export async function PUT(request: NextRequest) {
     const statusOnly = searchParams.get('status')
     if (!id) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
 
-    const formData = await request.formData()
     const db = createAdminClient()
 
     // Mode statut uniquement
@@ -77,6 +76,8 @@ export async function PUT(request: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
       return NextResponse.json({ success: true, id })
     }
+
+    const formData = await request.formData()
 
     const data = {
       nom: (formData.get('nom') as string)?.toUpperCase() ?? '',
