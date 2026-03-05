@@ -104,8 +104,9 @@ export async function createTeacher(
   })
 
   if (authError) {
-    // Ne pas bloquer si l'email existe déjà ou invitation échoue — enseignant créé quand même
-    console.error('Invite error:', authError.message)
+    // Enseignant créé mais invitation échouée — retourner un avertissement
+    revalidatePath('/teachers')
+    return { error: `Enseignant créé, mais invitation email échouée : ${authError.message}`, redirectTo: `/teachers/${teacher.id}` }
   } else if (authData?.user) {
     // Créer le profil lié au compte Auth
     await db.from('profiles').insert({
