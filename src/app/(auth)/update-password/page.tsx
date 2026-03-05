@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, CheckCircle, KeyRound } from 'lucide-react'
+import { AlertCircle, CheckCircle, KeyRound, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 
 export default function UpdatePasswordPage() {
@@ -17,6 +17,54 @@ export default function UpdatePasswordPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [isPending, setIsPending] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    const initSession = async () => {
+      // PKCE flow: le token est dans ?code=
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (exchangeError) {
+          setError('Lien invalide ou expiré. Demandez une nouvelle invitation.')
+        } else {
+          setSessionReady(true)
+        }
+        setChecking(false)
+        return
+      }
+
+      // Hash-based flow: les tokens sont dans le hash #access_token=...
+      // createBrowserClient les détecte automatiquement via getSession()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setSessionReady(true)
+      } else {
+        // Écouter le changement d'état auth (le client échange le hash automatiquement)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+          if (s) {
+            setSessionReady(true)
+            setChecking(false)
+            subscription.unsubscribe()
+          }
+        })
+        // Timeout si aucune session après 3s
+        setTimeout(() => {
+          setChecking(false)
+          subscription.unsubscribe()
+        }, 3000)
+        return
+      }
+      setChecking(false)
+    }
+
+    initSession()
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,13 +119,23 @@ export default function UpdatePasswordPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {success ? (
+            {checking ? (
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <p className="text-sm text-gray-500">Vérification du lien…</p>
+              </div>
+            ) : success ? (
               <div className="flex flex-col items-center gap-3 py-4 text-center">
                 <div className="bg-green-50 rounded-full p-3">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <p className="font-semibold text-gray-800">Mot de passe enregistré !</p>
                 <p className="text-sm text-gray-500">Redirection vers votre tableau de bord…</p>
+              </div>
+            ) : !sessionReady ? (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error || 'Lien invalide ou expiré. Demandez une nouvelle invitation.'}</span>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
