@@ -103,7 +103,7 @@ async function getDashboardData() {
 
     totalEmargementsMois = emargMois?.length ?? 0
     heuresMois = (emargMois ?? []).reduce((s, e) => s + calcHeures(e.heure_debut, e.heure_fin), 0)
-    recentEmargements = (emargRecents ?? []) as typeof recentEmargements
+    recentEmargements = (emargRecents ?? []) as unknown as typeof recentEmargements
   } catch {
     // table emargements inexistante
   }
