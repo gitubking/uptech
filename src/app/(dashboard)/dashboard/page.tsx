@@ -120,7 +120,7 @@ async function getDashboardData() {
     })
   }
   for (const p of recentPaiements ?? []) {
-    const et = p.etudiant as { nom: string; prenom: string } | null
+    const et = p.etudiant as unknown as { nom: string; prenom: string } | null
     activities.push({
       text: `Paiement ${p.statut === 'paye' ? 'reçu' : 'enregistré'} — ${et?.prenom} ${et?.nom}`,
       time: p.created_at, color: 'bg-orange-500',
@@ -128,8 +128,8 @@ async function getDashboardData() {
     })
   }
   for (const n of recentNotes ?? []) {
-    const mat = n.matiere as { nom: string } | null
-    const et = n.etudiant as { nom: string; prenom: string } | null
+    const mat = n.matiere as unknown as { nom: string } | null
+    const et = n.etudiant as unknown as { nom: string; prenom: string } | null
     activities.push({
       text: `Notes saisies — ${mat?.nom ?? 'Matière'} (${et?.prenom} ${et?.nom})`,
       time: n.created_at, color: 'bg-green-500',
@@ -139,7 +139,7 @@ async function getDashboardData() {
   // Présences (dédupliquées par matière+date)
   const seenPresence = new Set<string>()
   for (const p of recentPresences ?? []) {
-    const matNom = (p.matiere as { nom: string } | null)?.nom ?? ''
+    const matNom = (p.matiere as unknown as { nom: string } | null)?.nom ?? ''
     const key = `${p.date_cours}__${matNom}`
     if (!seenPresence.has(key)) {
       seenPresence.add(key)
@@ -153,8 +153,8 @@ async function getDashboardData() {
   }
   // Émargements récents
   for (const em of recentEmargements) {
-    const ens = em.enseignant as { nom: string; prenom: string } | null
-    const mat = em.matiere as { nom: string; code: string } | null
+    const ens = em.enseignant as unknown as { nom: string; prenom: string } | null
+    const mat = em.matiere as unknown as { nom: string; code: string } | null
     activities.push({
       text: `Émargement — ${mat?.code ?? ''} ${mat?.nom ?? 'Cours'} (${ens?.prenom} ${ens?.nom})`,
       time: em.date_cours, color: 'bg-indigo-500',
