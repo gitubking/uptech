@@ -153,9 +153,8 @@ export default async function BulletinPage({ params, searchParams }: PageProps) 
                     const mentionColor = mention
                       ? (MENTION_COLORS[mention] ?? 'bg-gray-100 text-gray-600 border-gray-200')
                       : ''
-                    const enseignant = m.enseignant
-                      ? `${m.enseignant.prenom} ${m.enseignant.nom}`
-                      : '—'
+                    const ens = (m.enseignant as unknown as { nom: string; prenom: string } | null)
+                    const enseignant = ens ? `${ens.prenom} ${ens.nom}` : '—'
                     return (
                       <tr key={m.id} className="hover:bg-gray-50/30 transition-colors">
                         <td className="px-4 py-3">
