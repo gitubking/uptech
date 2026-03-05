@@ -5,6 +5,7 @@ import {
   View,
   StyleSheet,
   Font,
+  type Style,
 } from '@react-pdf/renderer'
 
 Font.register({
@@ -227,7 +228,7 @@ function getDocumentType(niveau_entree?: string | null) {
   return { titre: 'Bulletin de Notes', type: 'fp' }
 }
 
-const MENTION_STYLE: Record<string, object> = {
+const MENTION_STYLE: Record<string, Style> = {
   TB: styles.mentionTB,
   B: styles.mentionB,
   AB: styles.mentionAB,
