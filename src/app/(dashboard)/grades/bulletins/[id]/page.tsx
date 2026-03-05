@@ -3,6 +3,7 @@ import { getBulletin, getActiveAnnee } from '@/app/actions/grades'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, AlertCircle, User, BookOpen, GraduationCap } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DownloadBulletinBtn } from '@/components/grades/download-bulletin-btn'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -88,10 +89,16 @@ export default async function BulletinPage({ params, searchParams }: PageProps) 
             Retour
           </Button>
         </Link>
-        <span className="text-xs text-gray-400">
-          Année académique :{' '}
-          <span className="font-medium text-gray-600">{annee?.libelle}</span>
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            Année : <span className="font-medium text-gray-600">{annee?.libelle}</span>
+          </span>
+          <DownloadBulletinBtn
+            studentId={id}
+            anneeId={annee_id}
+            studentName={`${etudiant.prenom} ${etudiant.nom}`}
+          />
+        </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-start gap-4">

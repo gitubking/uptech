@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getMatieres, getFormationData, getActiveAnnee } from '@/app/actions/grades'
 import { Button } from '@/components/ui/button'
-import { BookOpen, CheckCircle2, Clock, PenLine, ChevronRight } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, PenLine, ChevronRight, GraduationCap } from 'lucide-react'
 import { GradesFilters } from '@/components/grades/grades-filters'
 
 interface PageProps {
@@ -35,6 +35,12 @@ export default async function GradesPage({ searchParams }: PageProps) {
             {annee ? `Année académique : ${annee.libelle}` : 'Gestion des notes et bulletins'}
           </p>
         </div>
+        <Link href="/grades/classe">
+          <Button className="gap-2 bg-black hover:bg-gray-900 text-white" size="sm">
+            <GraduationCap className="h-4 w-4" />
+            Bulletins de classe
+          </Button>
+        </Link>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <StatCard icon={BookOpen} label="Total matières" value={total} color="blue" />

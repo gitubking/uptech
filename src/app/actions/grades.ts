@@ -196,6 +196,47 @@ export async function getActiveAnnee() {
   return data
 }
 
+// ─── Récupérer les étudiants d'une classe avec leur moyenne ──────────────────
+export async function getEtudiantsClasse(filiere_id: string, niveau_id: string, annee_id: string) {
+  const supabase = await createClient()
+
+  const { data: etudiants, error } = await supabase
+    .from('etudiants')
+    .select('id, nom, prenom, matricule')
+    .eq('filiere_id', filiere_id)
+    .eq('niveau_id', niveau_id)
+    .order('nom')
+
+  if (error || !etudiants) return []
+
+  // Récupérer les notes de chaque étudiant
+  const results = await Promise.all(
+    etudiants.map(async (etudiant) => {
+      const { data: notes } = await supabase
+        .from('notes')
+        .select('note_finale, coefficient:matieres(coefficient)')
+        .eq('etudiant_id', etudiant.id)
+        .eq('annee_academique_id', annee_id)
+        .not('note_finale', 'is', null)
+
+      const notesData = (notes ?? []) as { note_finale: number; coefficient: { coefficient: number }[] | null }[]
+      const totalCoeff = notesData.reduce((s, n) => {
+        const coeff = Array.isArray(n.coefficient) ? (n.coefficient[0]?.coefficient ?? 1) : 1
+        return s + coeff
+      }, 0)
+      const somme = notesData.reduce((s, n) => {
+        const coeff = Array.isArray(n.coefficient) ? (n.coefficient[0]?.coefficient ?? 1) : 1
+        return s + n.note_finale * coeff
+      }, 0)
+      const moyenne = totalCoeff > 0 ? somme / totalCoeff : null
+
+      return { ...etudiant, moyenne, nbMatieres: notesData.length }
+    })
+  )
+
+  return results.sort((a, b) => (b.moyenne ?? -1) - (a.moyenne ?? -1))
+}
+
 // ─── Recuperer filieres + niveaux pour les filtres ───────────────────────────
 export async function getFormationData() {
   const supabase = await createClient()
