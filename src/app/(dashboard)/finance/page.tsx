@@ -1,4 +1,4 @@
-import { CreditCard, TrendingUp, Clock, CheckCircle, Plus, Search } from 'lucide-react'
+import { CreditCard, TrendingUp, Clock, CheckCircle, Plus, Search, Settings2 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -48,12 +48,20 @@ export default async function FinancePage({ searchParams }: Props) {
           <h1 className="text-2xl font-bold text-gray-900">Finance</h1>
           <p className="text-gray-500 text-sm mt-1">Gestion des paiements et scolarités</p>
         </div>
-        <Link href="/finance/paiement">
-          <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
-            <Plus className="h-4 w-4" />
-            Nouveau paiement
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/finance/tarifs">
+            <Button variant="outline" className="gap-2 text-gray-600">
+              <Settings2 className="h-4 w-4" />
+              Tarifs
+            </Button>
+          </Link>
+          <Link href="/finance/paiement">
+            <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
+              <Plus className="h-4 w-4" />
+              Nouveau paiement
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

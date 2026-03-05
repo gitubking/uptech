@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { getEtudiantsForFinance, getActiveAnneeFinance } from '@/app/actions/finance'
+import { getTarifs } from '@/app/actions/tarifs'
 import { PaiementForm } from '@/components/finance/paiement-form'
 
 export default async function NouveauPaiementPage() {
@@ -9,6 +10,7 @@ export default async function NouveauPaiementPage() {
     getEtudiantsForFinance(),
     getActiveAnneeFinance(),
   ])
+  const tarifs = anneeActive?.id ? await getTarifs(anneeActive.id) : []
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -28,6 +30,7 @@ export default async function NouveauPaiementPage() {
       <PaiementForm
         etudiants={etudiants as unknown as Parameters<typeof PaiementForm>[0]['etudiants']}
         anneeActive={anneeActive}
+        tarifs={tarifs as unknown as Parameters<typeof PaiementForm>[0]['tarifs']}
       />
     </div>
   )

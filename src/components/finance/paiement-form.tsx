@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, CreditCard, User } from 'lucide-react'
+import { AlertCircle, CreditCard, User, Info } from 'lucide-react'
 
 interface Etudiant {
   id: string
@@ -18,6 +18,7 @@ interface Etudiant {
   nom: string
   prenom: string
   annee_academique_id: string
+  filiere_id: string
   filiere: { nom: string; code: string } | null
   niveau: { nom: string } | null
 }
@@ -27,9 +28,18 @@ interface AnneeAcademique {
   libelle: string
 }
 
+interface Tarif {
+  id: string
+  filiere_id: string
+  frais_inscription: number
+  mensualite: number
+  nb_mensualites: number
+}
+
 interface Props {
   etudiants: Etudiant[]
   anneeActive: AnneeAcademique | null
+  tarifs?: Tarif[]
 }
 
 const TYPE_OPTIONS = [
@@ -46,7 +56,11 @@ const MODE_OPTIONS = [
   { value: 'cheque', label: 'Chèque' },
 ]
 
-export function PaiementForm({ etudiants, anneeActive }: Props) {
+function formatMoney(n: number) {
+  return new Intl.NumberFormat('fr-SN').format(n) + ' FCFA'
+}
+
+export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
   const router = useRouter()
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +70,13 @@ export function PaiementForm({ etudiants, anneeActive }: Props) {
   const [anneeId, setAnneeId] = useState(anneeActive?.id ?? '')
 
   const selectedEtudiant = etudiants.find((e) => e.id === etudiantId)
+  const tarif = selectedEtudiant
+    ? tarifs.find(t => t.filiere_id === selectedEtudiant.filiere_id) ?? null
+    : null
+
+  const suggestedMontant = tarif
+    ? type === 'inscription' ? tarif.frais_inscription : tarif.mensualite
+    : null
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -124,6 +145,18 @@ export function PaiementForm({ etudiants, anneeActive }: Props) {
               <p className="text-blue-700 text-xs mt-0.5">
                 {selectedEtudiant.filiere?.code} — {selectedEtudiant.niveau?.nom}
               </p>
+              {tarif && (
+                <div className="mt-2 pt-2 border-t border-blue-200 flex flex-wrap gap-3 text-xs text-blue-800">
+                  <span><span className="font-medium">Inscription :</span> {formatMoney(tarif.frais_inscription)}</span>
+                  <span><span className="font-medium">Mensualité :</span> {formatMoney(tarif.mensualite)} × {tarif.nb_mensualites} mois</span>
+                </div>
+              )}
+              {!tarif && (
+                <div className="mt-2 pt-2 border-t border-blue-200 flex items-center gap-1.5 text-xs text-amber-700">
+                  <Info className="h-3 w-3" />
+                  Aucun tarif configuré pour cette filière
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -168,25 +201,34 @@ export function PaiementForm({ etudiants, anneeActive }: Props) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Montant total dû (FC) <span className="text-red-500">*</span></Label>
+              <Label>
+                Montant total dû (FCFA) <span className="text-red-500">*</span>
+                {suggestedMontant !== null && (
+                  <span className="ml-2 text-xs font-normal text-green-600">
+                    Suggéré : {formatMoney(suggestedMontant)}
+                  </span>
+                )}
+              </Label>
               <Input
                 name="montant_total"
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="ex: 150000"
+                step="1"
+                placeholder={suggestedMontant !== null ? String(suggestedMontant) : 'ex: 150000'}
+                defaultValue={suggestedMontant !== null ? suggestedMontant : undefined}
+                key={`total-${etudiantId}-${type}`}
                 required
                 className="h-10"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Montant versé (FC) <span className="text-red-500">*</span></Label>
+              <Label>Montant versé (FCFA) <span className="text-red-500">*</span></Label>
               <Input
                 name="montant"
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="ex: 75000"
+                step="1"
+                placeholder={suggestedMontant !== null ? String(suggestedMontant) : 'ex: 75000'}
                 required
                 className="h-10"
               />
