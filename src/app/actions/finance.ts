@@ -120,6 +120,18 @@ export async function getEtudiantsForFinance() {
   return data ?? []
 }
 
+// ─── Récupérer le tarif d'un étudiant ────────────────────────────────────────
+export async function getTarifEtudiant(filiere_id: string, annee_academique_id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('tarifs')
+    .select('mensualite, nb_mensualites')
+    .eq('filiere_id', filiere_id)
+    .eq('annee_academique_id', annee_academique_id)
+    .single()
+  return data
+}
+
 // ─── Récupérer l'année académique active ─────────────────────────────────────
 export async function getActiveAnneeFinance() {
   const supabase = await createClient()

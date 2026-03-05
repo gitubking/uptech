@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getStudentById } from '@/app/actions/students'
 import { getActiveAnnee, getBulletin } from '@/app/actions/grades'
 import { getStudentAttendanceStats } from '@/app/actions/attendance'
-import { getPaiementsEtudiant } from '@/app/actions/finance'
+import { getPaiementsEtudiant, getTarifEtudiant } from '@/app/actions/finance'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -57,15 +57,17 @@ export default async function StudentDetailPage({ params }: PageProps) {
   }
 
   const activeAnnee = await getActiveAnnee()
-  const [bulletinResult, attendanceResult, paiementsResult] = await Promise.allSettled([
+  const [bulletinResult, attendanceResult, paiementsResult, tarifResult] = await Promise.allSettled([
     activeAnnee ? getBulletin(id, activeAnnee.id) : Promise.resolve(null),
     getStudentAttendanceStats(id),
     getPaiementsEtudiant(id),
+    getTarifEtudiant(student.filiere_id, student.annee_academique_id),
   ])
 
   const bulletin = bulletinResult.status === 'fulfilled' ? bulletinResult.value : null
   const attendanceData = attendanceResult.status === 'fulfilled' ? attendanceResult.value : null
   const paiementsList = paiementsResult.status === 'fulfilled' ? paiementsResult.value : []
+  const tarif = tarifResult.status === 'fulfilled' ? tarifResult.value : null
 
   // Bulletin summary
   const matieresWithNote = bulletin?.matieres?.filter((m) => m.note_finale !== null) ?? []
@@ -81,6 +83,8 @@ export default async function StudentDetailPage({ params }: PageProps) {
   // Finance summary
   const totalPaye = paiementsList.reduce((s, p) => p.statut === 'paye' || p.statut === 'partiel' ? s + Number(p.montant) : s, 0)
   const totalAttente = paiementsList.reduce((s, p) => p.statut === 'en_attente' ? s + Number(p.montant_total) : s, 0)
+  const totalTarif = tarif ? Number(tarif.mensualite) * tarif.nb_mensualites : null
+  const soldeDu = totalTarif !== null ? Math.max(0, totalTarif - totalPaye) : totalAttente > 0 ? totalAttente : null
 
   const initials = `${student.prenom[0]}${student.nom[0]}`.toUpperCase()
   const statut = STATUT_CONFIG[student.statut] ?? { label: student.statut, color: 'bg-gray-100 text-gray-700' }
@@ -143,9 +147,12 @@ export default async function StudentDetailPage({ params }: PageProps) {
           </div>
           <div>
             <p className="text-xs text-gray-400">Solde dû</p>
-            <p className="text-xl font-bold text-gray-900">
-              {totalAttente > 0 ? formatMoney(totalAttente) : '—'}
+            <p className={`text-xl font-bold ${soldeDu !== null && soldeDu > 0 ? 'text-orange-600' : 'text-gray-900'}`}>
+              {soldeDu !== null ? formatMoney(soldeDu) : '—'}
             </p>
+            {totalTarif !== null && (
+              <p className="text-xs text-gray-400">{formatMoney(totalPaye)} / {formatMoney(totalTarif)}</p>
+            )}
           </div>
         </div>
       </div>
