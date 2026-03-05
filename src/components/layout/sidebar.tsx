@@ -15,6 +15,7 @@ import { logout } from '@/app/actions/auth'
 import { UserProfile } from '@/types'
 import { ROLE_LABELS } from '@/constants'
 import { useState } from 'react'
+import Image from 'next/image'
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, roles: ['all'] },
@@ -47,30 +48,28 @@ export function Sidebar({ profile }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "relative flex flex-col bg-slate-900 text-white transition-all duration-300 min-h-screen",
+      "relative flex flex-col bg-black text-white transition-all duration-300 min-h-screen",
       collapsed ? "w-16" : "w-64"
     )}>
 
       {/* Toggle collapse */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-6 z-10 bg-slate-900 border border-slate-700 rounded-full p-0.5 text-slate-400 hover:text-white transition-colors"
+        className="absolute -right-3 top-6 z-10 bg-black border border-gray-700 rounded-full p-0.5 text-gray-400 hover:text-white transition-colors"
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
 
       {/* Logo */}
       <div className={cn(
-        "flex items-center gap-3 px-4 py-5 border-b border-slate-700",
-        collapsed && "justify-center px-2"
+        "flex items-center justify-center px-4 py-4 border-b border-gray-800",
+        collapsed && "px-2"
       )}>
-        <div className="bg-blue-600 rounded-lg p-1.5 shrink-0">
-          <GraduationCap className="h-5 w-5 text-white" />
-        </div>
-        {!collapsed && (
-          <div>
-            <p className="font-bold text-white text-lg leading-none">UPTECH</p>
-            <p className="text-slate-400 text-xs mt-0.5">Gestion Institut</p>
+        {!collapsed ? (
+          <Image src="/logo.png" alt="UP'TECH" width={140} height={55} className="object-contain" />
+        ) : (
+          <div className="w-8 h-8 bg-[#CC1F1F] rounded flex items-center justify-center">
+            <span className="text-white font-bold text-xs">U</span>
           </div>
         )}
       </div>
@@ -88,8 +87,8 @@ export function Sidebar({ profile }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                 isActive
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white",
+                  ? "bg-[#CC1F1F] text-white shadow-lg"
+                  : "text-gray-400 hover:bg-gray-900 hover:text-white",
                 collapsed && "justify-center px-2"
               )}
             >
@@ -102,14 +101,14 @@ export function Sidebar({ profile }: SidebarProps) {
 
       {/* Profil utilisateur */}
       <div className={cn(
-        "border-t border-slate-700 p-3",
+        "border-t border-gray-800 p-3",
         collapsed ? "flex flex-col items-center gap-2" : "space-y-3"
       )}>
         {!collapsed && profile && (
           <div className="flex items-center gap-3 px-1">
             <Avatar className="h-9 w-9 shrink-0">
               <AvatarImage src={profile.photo_url ?? ''} />
-              <AvatarFallback className="bg-blue-600 text-white text-xs font-bold">
+              <AvatarFallback className="bg-[#CC1F1F] text-white text-xs font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -117,7 +116,7 @@ export function Sidebar({ profile }: SidebarProps) {
               <p className="text-sm font-semibold text-white truncate">
                 {profile.prenom} {profile.nom}
               </p>
-              <Badge variant="secondary" className="text-xs bg-slate-700 text-slate-300 mt-0.5">
+              <Badge variant="secondary" className="text-xs bg-gray-800 text-gray-300 mt-0.5">
                 {ROLE_LABELS[profile.role] ?? profile.role}
               </Badge>
             </div>
@@ -128,7 +127,7 @@ export function Sidebar({ profile }: SidebarProps) {
             type="submit"
             variant="ghost"
             className={cn(
-              "text-slate-400 hover:text-white hover:bg-slate-800 w-full",
+              "text-gray-400 hover:text-white hover:bg-gray-900 w-full",
               collapsed ? "px-2 justify-center" : "justify-start gap-3"
             )}
           >
