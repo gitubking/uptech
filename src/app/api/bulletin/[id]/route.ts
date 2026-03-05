@@ -55,7 +55,7 @@ export async function GET(
         anneeLibelle: annee?.libelle ?? '',
         moyenne,
         totalCredits,
-      })
+      }) as React.ReactElement
     )
 
     const nom = `${etudiant.nom}_${etudiant.prenom}`.replace(/\s+/g, '_')
