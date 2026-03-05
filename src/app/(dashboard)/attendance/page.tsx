@@ -69,7 +69,7 @@ export default async function AttendancePage() {
 
       {/* Filter / access form */}
       <AttendanceFilter
-        matieres={matieres as Parameters<typeof AttendanceFilter>[0]['matieres']}
+        matieres={matieres as unknown as Parameters<typeof AttendanceFilter>[0]['matieres']}
         filieres={filieres}
         niveaux={niveaux}
       />
