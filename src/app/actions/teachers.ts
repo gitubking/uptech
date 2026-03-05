@@ -72,11 +72,14 @@ export async function createTeacher(
   const db = createAdminClient()
 
   const matricule = await generateMatriculeEnseignant()
+  const email = (formData.get('email') as string) ?? ''
+  const nom = (formData.get('nom') as string)?.toUpperCase() ?? ''
+  const prenom = (formData.get('prenom') as string) ?? ''
 
   const data = {
-    nom: (formData.get('nom') as string)?.toUpperCase() ?? '',
-    prenom: (formData.get('prenom') as string) ?? '',
-    email: (formData.get('email') as string) ?? '',
+    nom,
+    prenom,
+    email,
     telephone: (formData.get('telephone') as string) ?? '',
     specialite: (formData.get('specialite') as string) ?? '',
     type_contrat: (formData.get('type_contrat') as string) || 'vacataire',
@@ -93,8 +96,28 @@ export async function createTeacher(
 
   if (error) return { error: error.message }
 
+  // Créer le compte Auth et envoyer l'email d'invitation
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://uptech-taupe.vercel.app'
+  const { data: authData, error: authError } = await db.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${siteUrl}/update-password`,
+    data: { role: 'enseignant' },
+  })
+
+  if (authError) {
+    // Ne pas bloquer si l'email existe déjà ou invitation échoue — enseignant créé quand même
+    console.error('Invite error:', authError.message)
+  } else if (authData?.user) {
+    // Créer le profil lié au compte Auth
+    await db.from('profiles').insert({
+      user_id: authData.user.id,
+      role: 'enseignant',
+      nom,
+      prenom,
+      email,
+    })
+  }
+
   revalidatePath('/teachers')
-  // Retourner l'ID au lieu de redirect() — évite la perte de cookies de session
   return { error: '', redirectTo: `/teachers/${teacher.id}` }
 }
 
