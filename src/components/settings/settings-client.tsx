@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/tabs'
 import {
   Plus, Pencil, Trash2, CheckCircle2, AlertCircle, Calendar, UserCircle,
-  GraduationCap, Banknote,
+  GraduationCap, Banknote, BookOpen,
 } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -38,11 +38,33 @@ type TypeFormationRow = {
   actif: boolean
 }
 
+type FiliereRow = {
+  id: string
+  nom: string
+  code: string
+  type_formation: 'academique' | 'certifiante' | 'acceleree'
+  nb_mensualites: number
+  actif: boolean
+}
+
 interface Props {
   annees: AnneeRow[]
   profile: ProfileRow | null
   userEmail: string
   typeFormations: TypeFormationRow[]
+  filieres: FiliereRow[]
+}
+
+const TYPE_FORMATION_LABELS: Record<string, { label: string; color: string }> = {
+  academique:   { label: 'Académique',   color: 'bg-blue-100 text-blue-700' },
+  certifiante:  { label: 'Certifiante',  color: 'bg-purple-100 text-purple-700' },
+  acceleree:    { label: 'Accélérée',    color: 'bg-orange-100 text-orange-700' },
+}
+
+const NB_MOIS_DEFAULTS: Record<string, number> = {
+  academique:  9,
+  certifiante: 6,
+  acceleree:   3,
 }
 
 const METHODE_LABELS: Record<string, string> = {
@@ -53,7 +75,7 @@ const METHODE_LABELS: Record<string, string> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function SettingsClient({ annees: initialAnnees, profile, userEmail, typeFormations: initialTypes }: Props) {
+export function SettingsClient({ annees: initialAnnees, profile, userEmail, typeFormations: initialTypes, filieres: initialFilieres }: Props) {
   const router = useRouter()
 
   // ── Années académiques ──
@@ -74,6 +96,15 @@ export function SettingsClient({ annees: initialAnnees, profile, userEmail, type
   const [typeLoading, setTypeLoading] = useState(false)
   const [typeFormError, setTypeFormError] = useState<string | null>(null)
   const [formMethode, setFormMethode] = useState<string>('horaire')
+
+  // ── Filières ──
+  const [filieres, setFilieres] = useState(initialFilieres)
+  const [filiereDialog, setFiliereDialog] = useState<{ mode: 'create' } | { mode: 'edit'; data: FiliereRow } | null>(null)
+  const [filiereDeleteConfirm, setFiliereDeleteConfirm] = useState<string | null>(null)
+  const [filiereLoading, setFiliereLoading] = useState(false)
+  const [filiereFormError, setFiliereFormError] = useState<string | null>(null)
+  const [formTypeFormation, setFormTypeFormation] = useState<string>('academique')
+  const [formNbMois, setFormNbMois] = useState<number>(9)
 
   // ── Handlers Années ──────────────────────────────────────────────────────
 
@@ -252,6 +283,78 @@ export function SettingsClient({ annees: initialAnnees, profile, userEmail, type
     setFormMethode(data.methode_paiement)
   }
 
+  // ── Handlers Filières ────────────────────────────────────────────────────
+
+  function openFiliereCreate() {
+    setFormTypeFormation('academique')
+    setFormNbMois(9)
+    setFiliereFormError(null)
+    setFiliereDialog({ mode: 'create' })
+  }
+
+  function openFiliereEdit(data: FiliereRow) {
+    setFormTypeFormation(data.type_formation)
+    setFormNbMois(data.nb_mensualites)
+    setFiliereFormError(null)
+    setFiliereDialog({ mode: 'edit', data })
+  }
+
+  async function handleFiliereSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setFiliereLoading(true)
+    setFiliereFormError(null)
+
+    const formData = new FormData(e.currentTarget)
+    const body = {
+      nom: formData.get('nom') as string,
+      code: formData.get('code') as string,
+      type_formation: formTypeFormation,
+      nb_mensualites: formNbMois,
+    }
+
+    const isEdit = filiereDialog?.mode === 'edit'
+    const url = isEdit ? `/api/filieres?id=${filiereDialog.data.id}` : '/api/filieres'
+    const method = isEdit ? 'PUT' : 'POST'
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const result = await res.json()
+      if (result.error) {
+        setFiliereFormError(result.error)
+      } else {
+        if (isEdit) {
+          setFilieres((prev) => prev.map((f) => f.id === result.id ? result : f))
+        } else {
+          setFilieres((prev) => [...prev, result])
+        }
+        setFiliereDialog(null)
+      }
+    } catch {
+      setFiliereFormError('Erreur réseau')
+    } finally {
+      setFiliereLoading(false)
+    }
+  }
+
+  async function handleFiliereDelete(id: string) {
+    try {
+      const res = await fetch(`/api/filieres?id=${id}`, { method: 'DELETE' })
+      const result = await res.json()
+      if (result.error) {
+        alert(result.error)
+      } else {
+        setFiliereDeleteConfirm(null)
+        setFilieres((prev) => prev.filter((f) => f.id !== id))
+      }
+    } catch {
+      alert('Erreur lors de la suppression')
+    }
+  }
+
   // ── Constantes ────────────────────────────────────────────────────────────
 
   const ROLE_LABELS: Record<string, string> = {
@@ -278,6 +381,11 @@ export function SettingsClient({ annees: initialAnnees, profile, userEmail, type
           <TabsTrigger value="annees" className="gap-2">
             <Calendar className="h-4 w-4" />
             Années académiques
+          </TabsTrigger>
+          <TabsTrigger value="filieres" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Filières
+            <Badge variant="secondary" className="ml-1 text-xs">{filieres.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="types" className="gap-2">
             <GraduationCap className="h-4 w-4" />
@@ -371,6 +479,91 @@ export function SettingsClient({ annees: initialAnnees, profile, userEmail, type
               </tbody>
             </table>
           </div>
+        </TabsContent>
+
+        {/* ── FILIÈRES ── */}
+        <TabsContent value="filieres" className="mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-gray-500">
+              Gérez les filières et parcours de formation par type.
+            </p>
+            <Button onClick={openFiliereCreate} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0">
+              <Plus className="h-4 w-4" /> Nouvelle filière
+            </Button>
+          </div>
+
+          {(['academique', 'certifiante', 'acceleree'] as const).map((type) => {
+            const group = filieres.filter(f => f.type_formation === type)
+            const cfg = TYPE_FORMATION_LABELS[type]
+            return (
+              <div key={type} className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
+                    {cfg.label}
+                  </span>
+                  <span className="text-xs text-gray-400">{group.length} filière{group.length > 1 ? 's' : ''}</span>
+                </div>
+                {group.length === 0 ? (
+                  <p className="text-sm text-gray-400 pl-2">Aucune filière</p>
+                ) : (
+                  <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                          <th className="text-left py-2.5 px-4 font-medium text-gray-600">Code</th>
+                          <th className="text-left py-2.5 px-4 font-medium text-gray-600">Nom</th>
+                          <th className="text-center py-2.5 px-4 font-medium text-gray-600">Nb mois</th>
+                          <th className="text-right py-2.5 px-4 font-medium text-gray-600">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {group.map((f) => (
+                          <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="py-2.5 px-4">
+                              <span className="font-mono text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+                                {f.code}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-4 text-gray-900">{f.nom}</td>
+                            <td className="py-2.5 px-4 text-center">
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
+                                {f.nb_mensualites}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                                  onClick={() => openFiliereEdit(f)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                {filiereDeleteConfirm === f.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <Button variant="destructive" size="sm" className="h-7 text-xs px-2"
+                                      onClick={() => handleFiliereDelete(f.id)}>
+                                      Oui
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2"
+                                      onClick={() => setFiliereDeleteConfirm(null)}>
+                                      Non
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
+                                    onClick={() => setFiliereDeleteConfirm(f.id)}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </TabsContent>
 
         {/* ── TYPES DE FORMATION ── */}
@@ -579,6 +772,84 @@ export function SettingsClient({ annees: initialAnnees, profile, userEmail, type
               <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 {loading ? 'Enregistrement…' : anneeDialog?.mode === 'create' ? 'Créer' : 'Enregistrer'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── DIALOG Filière ── */}
+      <Dialog open={!!filiereDialog} onOpenChange={(open) => { if (!open) setFiliereDialog(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {filiereDialog?.mode === 'create' ? 'Nouvelle filière' : 'Modifier la filière'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleFiliereSubmit} className="space-y-4">
+            {filiereDialog?.mode === 'create' && (
+              <div className="space-y-1.5">
+                <Label>Type de formation *</Label>
+                <Select
+                  value={formTypeFormation}
+                  onValueChange={(v) => { setFormTypeFormation(v); setFormNbMois(NB_MOIS_DEFAULTS[v] ?? 6) }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="academique">Académique (9 mois/niveau, 6 niveaux)</SelectItem>
+                    <SelectItem value="certifiante">Certifiante (pas de niveaux)</SelectItem>
+                    <SelectItem value="acceleree">Accélérée (pas de niveaux)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="f_code">Code *</Label>
+                <Input
+                  id="f_code" name="code" required
+                  placeholder="IG" className="uppercase"
+                  defaultValue={filiereDialog?.mode === 'edit' ? filiereDialog.data.code : ''}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Nb mensualités *</Label>
+                <Input
+                  type="number" min={1} max={24} required
+                  value={formNbMois}
+                  onChange={(e) => setFormNbMois(Number(e.target.value))}
+                  disabled={formTypeFormation === 'academique' && filiereDialog?.mode === 'create'}
+                />
+                {formTypeFormation === 'academique' && filiereDialog?.mode === 'create' && (
+                  <p className="text-xs text-gray-400">Fixé à 9 pour les formations académiques</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="f_nom">Nom complet *</Label>
+              <Input
+                id="f_nom" name="nom" required
+                placeholder="ex: Informatique de Gestion"
+                defaultValue={filiereDialog?.mode === 'edit' ? filiereDialog.data.nom : ''}
+              />
+            </div>
+
+            {filiereFormError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {filiereFormError}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setFiliereDialog(null)} disabled={filiereLoading}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={filiereLoading} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                {filiereLoading ? 'Enregistrement…' : filiereDialog?.mode === 'create' ? 'Créer' : 'Enregistrer'}
               </Button>
             </DialogFooter>
           </form>

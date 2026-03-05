@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { AlertCircle, User, Phone, BookOpen, GraduationCap } from 'lucide-react'
 
 interface Props {
-  filieres: { id: string; nom: string; code: string }[]
+  filieres: { id: string; nom: string; code: string; type_formation?: string | null; nb_mensualites?: number | null }[]
   niveaux: { id: string; nom: string; filiere_id: string; ordre: number }[]
   annees: { id: string; libelle: string }[]
   defaultValues?: Record<string, string>
@@ -31,6 +31,8 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
   const [statut, setStatut] = useState(defaultValues?.statut ?? 'preinscrit')
   const [niveauEntree, setNiveauEntree] = useState(defaultValues?.niveau_entree ?? 'bfem')
 
+  const selectedFiliereData = filieres.find(f => f.id === selectedFiliere)
+  const isAcademique = !selectedFiliereData || selectedFiliereData.type_formation === 'academique' || !selectedFiliereData.type_formation
   const filteredNiveaux = niveaux.filter(n => n.filiere_id === selectedFiliere)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -199,35 +201,39 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
                 </SelectContent>
               </Select>
             </div>
+            {isAcademique && (
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-gray-700">Niveau <span className="text-red-500">*</span></Label>
+                <Select value={niveau_id} onValueChange={setNiveauId} disabled={!filiere_id} required>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={filiere_id ? 'Choisir un niveau' : "Choisir d'abord une filière"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredNiveaux.map(n => (
+                      <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {isAcademique && (
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700">Niveau <span className="text-red-500">*</span></Label>
-              <Select value={niveau_id} onValueChange={setNiveauId} disabled={!filiere_id} required>
+              <Label className="text-sm font-medium text-gray-700">Niveau d'entrée <span className="text-red-500">*</span></Label>
+              <Select value={niveauEntree} onValueChange={setNiveauEntree} required>
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder={filiere_id ? 'Choisir un niveau' : 'Choisir d\'abord une filière'} />
+                  <SelectValue placeholder="Niveau d'entrée" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredNiveaux.map(n => (
-                    <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
-                  ))}
+                  <SelectItem value="non_diplome">Non diplômé → DAP</SelectItem>
+                  <SelectItem value="sixieme">Niveau 6ème → DAP</SelectItem>
+                  <SelectItem value="bfem">BFEM → DT</SelectItem>
+                  <SelectItem value="bac">BAC → Licence (LMD)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-gray-700">Niveau d'entrée <span className="text-red-500">*</span></Label>
-            <Select value={niveauEntree} onValueChange={setNiveauEntree} required>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Niveau d'entrée" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="non_diplome">Non diplômé → DAP</SelectItem>
-                <SelectItem value="sixieme">Niveau 6ème → DAP</SelectItem>
-                <SelectItem value="bfem">BFEM → DT</SelectItem>
-                <SelectItem value="bac">BAC → Licence (LMD)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -267,7 +273,7 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
         </Button>
         <Button
           type="submit"
-          disabled={isPending || !filiere_id || !niveau_id || !annee_id || !sexe}
+          disabled={isPending || !filiere_id || (isAcademique && !niveau_id) || !annee_id || !sexe}
           className="bg-blue-700 hover:bg-blue-800 text-white min-w-32"
         >
           {isPending ? 'Enregistrement...' : studentId ? 'Mettre à jour' : 'Inscrire l\'étudiant'}

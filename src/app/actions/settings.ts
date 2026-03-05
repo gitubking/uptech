@@ -31,10 +31,17 @@ export async function getSettingsData() {
   }
   // Si typeError → table non créée encore, typeFormations reste []
 
+  const { data: filieres } = await supabase
+    .from('filieres')
+    .select('id, nom, code, type_formation, nb_mensualites, actif')
+    .order('type_formation')
+    .order('nom')
+
   return {
     annees: annees ?? [],
     profile: profile ?? null,
     userEmail: user?.email ?? '',
     typeFormations,
+    filieres: filieres ?? [],
   }
 }

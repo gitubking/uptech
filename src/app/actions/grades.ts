@@ -241,7 +241,7 @@ export async function getEtudiantsClasse(filiere_id: string, niveau_id: string, 
 export async function getFormationData() {
   const supabase = await createClient()
   const [{ data: filieres }, { data: niveaux }, { data: annees }] = await Promise.all([
-    supabase.from('filieres').select('id, nom, code').order('nom'),
+    supabase.from('filieres').select('id, nom, code, type_formation, nb_mensualites').order('nom'),
     supabase.from('niveaux').select('id, nom, filiere_id, ordre').order('ordre'),
     supabase
       .from('annees_academiques')

@@ -32,6 +32,7 @@ export default async function SettingsPage() {
       profile={data.profile as unknown as Parameters<typeof SettingsClient>[0]['profile']}
       userEmail={data.userEmail}
       typeFormations={data.typeFormations as unknown as Parameters<typeof SettingsClient>[0]['typeFormations']}
+      filieres={data.filieres as unknown as Parameters<typeof SettingsClient>[0]['filieres']}
     />
   )
 }

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { AlertCircle, Plus, Pencil, Trash2, Settings2 } from 'lucide-react'
 
-interface Filiere { id: string; nom: string; code: string }
+interface Filiere { id: string; nom: string; code: string; type_formation?: string | null; nb_mensualites?: number | null }
 interface Annee { id: string; libelle: string }
 interface Tarif {
   id: string
@@ -42,19 +42,35 @@ export function TarifsManager({ tarifs: initialTarifs, filieres, annees, anneeAc
   const [error, setError] = useState<string | null>(null)
 
   // Controlled select states for dialog
+  const [typeFormation, setTypeFormation] = useState('')
   const [filiereId, setFiliereId] = useState('')
   const [anneeId, setAnneeId] = useState(anneeActiveId ?? '')
+  const [nbMensualites, setNbMensualites] = useState<number>(9)
+
+  const selectedFiliere = filieres.find(f => f.id === filiereId)
+  const filteredFilieres = typeFormation ? filieres.filter(f => f.type_formation === typeFormation) : []
+
+  const TYPE_LABELS: Record<string, string> = {
+    academique: 'Académique',
+    certifiante: 'Certifiante',
+    acceleree: 'Accélérée',
+  }
 
   function openCreate() {
+    setTypeFormation('')
     setFiliereId('')
     setAnneeId(anneeActiveId ?? '')
+    setNbMensualites(9)
     setError(null)
     setDialog({ mode: 'create' })
   }
 
   function openEdit(t: Tarif) {
+    const f = filieres.find(fi => fi.id === t.filiere_id)
+    setTypeFormation(f?.type_formation ?? '')
     setFiliereId(t.filiere_id)
     setAnneeId(t.annee_academique_id)
+    setNbMensualites(t.nb_mensualites)
     setError(null)
     setDialog({ mode: 'edit', data: t })
   }
@@ -187,13 +203,43 @@ export function TarifsManager({ tarifs: initialTarifs, filieres, annees, anneeAc
             )}
 
             <div className="space-y-1.5">
-              <Label>Filière <span className="text-red-500">*</span></Label>
-              <Select value={filiereId} onValueChange={setFiliereId} required>
+              <Label>Type de formation <span className="text-red-500">*</span></Label>
+              <Select
+                value={typeFormation}
+                onValueChange={(v) => {
+                  setTypeFormation(v)
+                  setFiliereId('')
+                  const defaultMois = v === 'academique' ? 9 : v === 'certifiante' ? 6 : 3
+                  setNbMensualites(defaultMois)
+                }}
+              >
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Choisir une filière" />
+                  <SelectValue placeholder="Choisir un type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filieres.map(f => (
+                  {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Filière <span className="text-red-500">*</span></Label>
+              <Select
+                value={filiereId}
+                onValueChange={(v) => {
+                  setFiliereId(v)
+                  const f = filieres.find(f => f.id === v)
+                  if (f?.nb_mensualites) setNbMensualites(f.nb_mensualites)
+                }}
+                disabled={!typeFormation}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder={typeFormation ? 'Choisir une filière' : 'Choisir d\'abord un type'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredFilieres.map(f => (
                     <SelectItem key={f.id} value={f.id}>{f.code} — {f.nom}</SelectItem>
                   ))}
                 </SelectContent>
@@ -250,16 +296,23 @@ export function TarifsManager({ tarifs: initialTarifs, filieres, annees, anneeAc
                 type="number"
                 min="1"
                 max="24"
-                defaultValue={dialog?.data?.nb_mensualites ?? 10}
+                value={nbMensualites}
+                onChange={(e) => setNbMensualites(Number(e.target.value))}
                 required
                 className="h-10"
               />
-              <p className="text-xs text-gray-400">Dépend du type de formation (ex: DAP = 10 mois, Licence = 9 mois)</p>
+              {selectedFiliere?.type_formation && (
+                <p className="text-xs text-gray-400">
+                  {selectedFiliere.type_formation === 'academique' ? '9 mois par niveau' :
+                   selectedFiliere.type_formation === 'certifiante' ? 'Durée du parcours certifiant' :
+                   'Durée du programme accéléré'}
+                </p>
+              )}
             </div>
 
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setDialog(null)}>Annuler</Button>
-              <Button type="submit" disabled={loading || !filiereId || !anneeId} className="bg-green-600 hover:bg-green-700 text-white">
+              <Button type="submit" disabled={loading || !typeFormation || !filiereId || !anneeId} className="bg-green-600 hover:bg-green-700 text-white">
                 {loading ? 'Enregistrement...' : dialog?.mode === 'create' ? 'Créer' : 'Mettre à jour'}
               </Button>
             </DialogFooter>
