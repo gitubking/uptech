@@ -36,8 +36,7 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
     return filieres.find(f => f.id === defaultValues.filiere_id)?.type_formation ?? ''
   })
 
-  const selectedFiliereData = filieres.find(f => f.id === selectedFiliere)
-  const isAcademique = !selectedFiliereData || selectedFiliereData.type_formation === 'academique' || !selectedFiliereData.type_formation
+  const isAcademique = typeFormation === 'academique'
   const filteredFilieres = typeFormation ? filieres.filter(f => f.type_formation === typeFormation) : []
   const filteredNiveaux = niveaux.filter(n => n.filiere_id === selectedFiliere)
 
