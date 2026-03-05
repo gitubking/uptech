@@ -209,6 +209,7 @@ interface Etudiant {
   nom: string
   prenom: string
   matricule: string
+  niveau_entree?: string | null
   filiere?: { nom: string } | null
   niveau?: { nom: string } | null
 }
@@ -219,6 +220,11 @@ interface BulletinPDFProps {
   anneeLibelle: string
   moyenne: number | null
   totalCredits: number
+}
+
+function getDocumentType(niveau_entree?: string | null) {
+  if (niveau_entree === 'bac') return { titre: 'Relevé de Notes', type: 'lmd' }
+  return { titre: 'Bulletin de Notes', type: 'fp' }
 }
 
 const MENTION_STYLE: Record<string, object> = {
@@ -312,6 +318,7 @@ export function BulletinPDF({ etudiant, matieres, anneeLibelle, moyenne, totalCr
   const dateImpression = new Date().toLocaleDateString('fr-FR', {
     day: '2-digit', month: 'long', year: 'numeric',
   })
+  const { titre } = getDocumentType(etudiant.niveau_entree)
 
   return (
     <Document>
@@ -323,7 +330,7 @@ export function BulletinPDF({ etudiant, matieres, anneeLibelle, moyenne, totalCr
             <Text style={styles.schoolSubtitle}>Institut Supérieur de Technologie</Text>
           </View>
           <View style={styles.headerRight}>
-            <Text style={styles.bulletinTitle}>Bulletin de Notes</Text>
+            <Text style={styles.bulletinTitle}>{titre}</Text>
             <Text style={styles.anneeLabel}>Année académique : {anneeLibelle}</Text>
           </View>
         </View>

@@ -45,6 +45,7 @@ export async function GET(
       ...etudiant,
       filiere: Array.isArray(etudiant.filiere) ? (etudiant.filiere[0] ?? null) : etudiant.filiere,
       niveau: Array.isArray(etudiant.niveau) ? (etudiant.niveau[0] ?? null) : etudiant.niveau,
+      niveau_entree: etudiant.niveau_entree ?? null,
     }
 
     const buffer = await renderToBuffer(

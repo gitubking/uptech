@@ -29,6 +29,7 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
   const [annee_id, setAnneeId] = useState(defaultValues?.annee_academique_id ?? (annees[0]?.id ?? ''))
   const [sexe, setSexe] = useState(defaultValues?.sexe ?? '')
   const [statut, setStatut] = useState(defaultValues?.statut ?? 'preinscrit')
+  const [niveauEntree, setNiveauEntree] = useState(defaultValues?.niveau_entree ?? 'bfem')
 
   const filteredNiveaux = niveaux.filter(n => n.filiere_id === selectedFiliere)
 
@@ -71,6 +72,7 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
       <input type="hidden" name="annee_academique_id" value={annee_id} />
       <input type="hidden" name="sexe" value={sexe} />
       <input type="hidden" name="statut" value={statut} />
+      <input type="hidden" name="niveau_entree" value={niveauEntree} />
 
       {/* Informations personnelles */}
       <Card className="border border-gray-100 shadow-sm">
@@ -210,6 +212,21 @@ export function StudentForm({ filieres, niveaux, annees, defaultValues, studentI
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium text-gray-700">Niveau d'entrée <span className="text-red-500">*</span></Label>
+            <Select value={niveauEntree} onValueChange={setNiveauEntree} required>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Niveau d'entrée" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="non_diplome">Non diplômé → DAP</SelectItem>
+                <SelectItem value="sixieme">Niveau 6ème → DAP</SelectItem>
+                <SelectItem value="bfem">BFEM → DT</SelectItem>
+                <SelectItem value="bac">BAC → Licence (LMD)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

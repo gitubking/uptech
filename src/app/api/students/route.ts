@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       niveau_id: (formData.get('niveau_id') as string) ?? '',
       annee_academique_id: (formData.get('annee_academique_id') as string) ?? '',
       statut: (formData.get('statut') as string) || 'preinscrit',
+      niveau_entree: (formData.get('niveau_entree') as string) || 'bfem',
       matricule: '',
     }
 
@@ -94,6 +95,7 @@ export async function PUT(request: NextRequest) {
       filiere_id: (formData.get('filiere_id') as string) ?? '',
       niveau_id: (formData.get('niveau_id') as string) ?? '',
       statut: (formData.get('statut') as string) ?? '',
+      niveau_entree: (formData.get('niveau_entree') as string) || 'bfem',
     }
 
     const { error } = await db.from('etudiants').update(data).eq('id', id)
