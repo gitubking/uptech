@@ -33,6 +33,28 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
+    // Envoyer l'invitation email via Supabase Auth
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://uptech-taupe.vercel.app'
+    const { data: authData, error: authError } = await db.auth.admin.inviteUserByEmail(data.email, {
+      redirectTo: `${siteUrl}/update-password`,
+      data: { role: 'etudiant' },
+    })
+
+    if (authError) {
+      console.error('Invite error:', authError.message)
+      return NextResponse.json({ success: true, id: student.id, inviteError: authError.message })
+    }
+
+    if (authData?.user) {
+      await db.from('profiles').insert({
+        user_id: authData.user.id,
+        role: 'etudiant',
+        nom: data.nom,
+        prenom: data.prenom,
+        email: data.email,
+      })
+    }
+
     return NextResponse.json({ success: true, id: student.id })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
@@ -89,7 +111,21 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
 
     const db = createAdminClient()
+
+    // Récupérer l'email pour supprimer le compte Auth
+    const { data: student } = await db.from('etudiants').select('email').eq('id', id).single()
+
     await db.from('etudiants').delete().eq('id', id)
+
+    // Supprimer le compte Auth et le profil associé
+    if (student?.email) {
+      const { data: authUsers } = await db.auth.admin.listUsers()
+      const authUser = authUsers?.users?.find(u => u.email === student.email)
+      if (authUser) {
+        await db.auth.admin.deleteUser(authUser.id)
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
