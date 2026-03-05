@@ -37,8 +37,9 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Routes publiques — pas besoin d'authentification
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/api/']
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/update-password', '/api/']
   if (publicRoutes.some(r => pathname.startsWith(r))) {
+    supabaseResponse.headers.set('x-pathname', pathname)
     return supabaseResponse
   }
 
@@ -55,6 +56,9 @@ export async function proxy(request: NextRequest) {
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
+
+  // Ajouter x-pathname pour que le layout puisse lire le chemin actuel
+  supabaseResponse.headers.set('x-pathname', pathname)
 
   // TOUJOURS retourner supabaseResponse pour propager les cookies rafraîchis
   return supabaseResponse
