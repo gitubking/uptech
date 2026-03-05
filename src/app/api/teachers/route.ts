@@ -108,7 +108,21 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
 
     const db = createAdminClient()
+
+    // Récupérer l'email pour supprimer le compte Auth
+    const { data: teacher } = await db.from('enseignants').select('email').eq('id', id).single()
+
     await db.from('enseignants').delete().eq('id', id)
+
+    // Supprimer le compte Auth et le profil associé
+    if (teacher?.email) {
+      const { data: authUsers } = await db.auth.admin.listUsers()
+      const authUser = authUsers?.users?.find(u => u.email === teacher.email)
+      if (authUser) {
+        await db.auth.admin.deleteUser(authUser.id)
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
