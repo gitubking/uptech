@@ -113,7 +113,12 @@ export default async function StudentDetailPage({ params }: PageProps) {
               Modifier
             </Button>
           </Link>
-          <StudentActions studentId={id} statut={student.statut} />
+          <StudentActions
+            studentId={id}
+            statut={student.statut}
+            anneeAcademiqueId={student.annee_academique_id}
+            tarif={tarif ? { frais_inscription: Number(tarif.frais_inscription), mensualite: Number(tarif.mensualite), nb_mensualites: tarif.nb_mensualites } : null}
+          />
         </div>
       </div>
 
