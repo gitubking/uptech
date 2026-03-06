@@ -20,15 +20,46 @@ function formatMoney(n: number) {
   return new Intl.NumberFormat('fr-SN').format(n) + ' FCFA'
 }
 
+const MODES = [
+  { value: 'especes', label: 'Espèces' },
+  { value: 'virement', label: 'Virement bancaire' },
+  { value: 'mobile_money', label: 'Mobile Money' },
+  { value: 'cheque', label: 'Chèque' },
+]
+
 export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState<'delete' | 'activate' | null>(null)
-  const [showInscriptionDialog, setShowInscriptionDialog] = useState(false)
-  const [modePaiement, setModePaiement] = useState('especes')
-  const [montantPaye, setMontantPaye] = useState<string>(
-    tarif ? String(tarif.frais_inscription) : '0'
-  )
+  const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Frais d'inscription
+  const [montantInscription, setMontantInscription] = useState('')
+  const [modeInscription, setModeInscription] = useState('especes')
+
+  // Versement scolarité
+  const [versementType, setVersementType] = useState<'none' | 'mensualite' | 'avance'>('none')
+  const [montantVersement, setMontantVersement] = useState('')
+  const [modeVersement, setModeVersement] = useState('especes')
+
+  const totalScolarite = tarif ? tarif.mensualite * tarif.nb_mensualites : 0
+
+  function openDialog() {
+    setMontantInscription(tarif ? String(tarif.frais_inscription) : '0')
+    setModeInscription('especes')
+    setVersementType('none')
+    setMontantVersement('')
+    setModeVersement('especes')
+    setError(null)
+    setOpen(true)
+  }
+
+  function onVersementTypeChange(v: 'none' | 'mensualite' | 'avance') {
+    setVersementType(v)
+    if (v === 'mensualite') setMontantVersement(tarif ? String(tarif.mensualite) : '')
+    else if (v === 'avance') setMontantVersement('')
+    else setMontantVersement('')
+  }
 
   async function handleDelete() {
     if (!confirm('Supprimer cet étudiant définitivement ?')) return
@@ -42,45 +73,54 @@ export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: 
     }
   }
 
-  function openInscriptionDialog() {
-    setMontantPaye(tarif ? String(tarif.frais_inscription) : '0')
-    setModePaiement('especes')
-    setError(null)
-    setShowInscriptionDialog(true)
+  async function postPaiement(type: string, montant: number, montantTotal: number, mode: string) {
+    const fd = new FormData()
+    fd.set('etudiant_id', studentId)
+    fd.set('annee_academique_id', anneeAcademiqueId)
+    fd.set('type', type)
+    fd.set('montant', String(montant))
+    fd.set('montant_total', String(montantTotal))
+    fd.set('mode_paiement', mode)
+    const res = await fetch('/api/finance', { method: 'POST', body: fd })
+    return res.json()
   }
 
-  async function handleValidateInscription() {
+  async function handleConfirm() {
     setError(null)
     setLoading('activate')
     try {
-      const montant = parseFloat(montantPaye) || 0
       const fraisInscription = tarif?.frais_inscription ?? 0
+      const montantInsc = parseFloat(montantInscription) || 0
 
-      // 1. Enregistrer le paiement d'inscription si des frais sont configurés
+      // 1. Paiement inscription
       if (fraisInscription > 0) {
-        const fd = new FormData()
-        fd.set('etudiant_id', studentId)
-        fd.set('annee_academique_id', anneeAcademiqueId)
-        fd.set('type', 'inscription')
-        fd.set('montant', String(montant))
-        fd.set('montant_total', String(fraisInscription))
-        fd.set('mode_paiement', modePaiement)
-        const res = await fetch('/api/finance', { method: 'POST', body: fd })
-        const data = await res.json()
-        if (data.error) { setError(data.error); return }
+        const d = await postPaiement('inscription', montantInsc, fraisInscription, modeInscription)
+        if (d.error) { setError(d.error); return }
       }
 
-      // 2. Changer le statut en inscrit
+      // 2. Versement scolarité optionnel
+      if (versementType !== 'none' && totalScolarite > 0) {
+        const montantV = parseFloat(montantVersement) || 0
+        if (montantV > 0) {
+          const d = await postPaiement('scolarite', montantV, totalScolarite, modeVersement)
+          if (d.error) { setError(d.error); return }
+        }
+      }
+
+      // 3. Changer statut → inscrit
       const res = await fetch(`/api/students?id=${studentId}&status=inscrit`, { method: 'PUT' })
       const data = await res.json()
       if (data.error) { setError(data.error); return }
 
-      setShowInscriptionDialog(false)
+      setOpen(false)
       router.refresh()
     } finally {
       setLoading(null)
     }
   }
+
+  const montantInscriptionNum = parseFloat(montantInscription) || 0
+  const fraisInscription = tarif?.frais_inscription ?? 0
 
   return (
     <>
@@ -97,7 +137,7 @@ export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: 
       {statut === 'preinscrit' && (
         <Button
           className="bg-green-600 hover:bg-green-700 text-white gap-2 text-sm"
-          onClick={openInscriptionDialog}
+          onClick={openDialog}
           disabled={loading !== null}
         >
           <CheckCircle className="h-4 w-4" />
@@ -105,12 +145,13 @@ export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: 
         </Button>
       )}
 
-      <Dialog open={showInscriptionDialog} onOpenChange={setShowInscriptionDialog}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Valider l&apos;inscription</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-1">
+
+          <div className="space-y-5 pt-1">
             {error && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -118,61 +159,107 @@ export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: 
               </div>
             )}
 
-            {tarif && tarif.frais_inscription > 0 ? (
-              <>
-                <div className="bg-blue-50 rounded-lg px-4 py-3 text-sm text-blue-800">
-                  Frais d&apos;inscription : <span className="font-bold">{formatMoney(tarif.frais_inscription)}</span>
+            {/* ── Section 1 : Frais d'inscription ── */}
+            {tarif ? (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Frais d&apos;inscription</p>
+                <div className="bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-600">
+                  Montant dû : <span className="font-bold text-gray-900">{formatMoney(fraisInscription)}</span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label>Montant encaissé (FCFA)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max={tarif.frais_inscription}
-                    value={montantPaye}
-                    onChange={(e) => setMontantPaye(e.target.value)}
-                    className="h-10"
-                  />
-                  {parseFloat(montantPaye) < tarif.frais_inscription && parseFloat(montantPaye) > 0 && (
-                    <p className="text-xs text-orange-600">
-                      Paiement partiel — reste {formatMoney(tarif.frais_inscription - parseFloat(montantPaye))}
-                    </p>
-                  )}
-                  {parseFloat(montantPaye) === 0 && (
-                    <p className="text-xs text-gray-500">Aucun versement — paiement en attente</p>
-                  )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Montant encaissé (FCFA)</Label>
+                    <Input
+                      type="number" min="0" max={fraisInscription}
+                      value={montantInscription}
+                      onChange={(e) => setMontantInscription(e.target.value)}
+                      className="h-9 text-sm"
+                    />
+                    {montantInscriptionNum > 0 && montantInscriptionNum < fraisInscription && (
+                      <p className="text-xs text-orange-500">Reste {formatMoney(fraisInscription - montantInscriptionNum)}</p>
+                    )}
+                    {montantInscriptionNum === 0 && (
+                      <p className="text-xs text-gray-400">En attente</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Mode de paiement</Label>
+                    <Select value={modeInscription} onValueChange={setModeInscription}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MODES.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label>Mode de paiement</Label>
-                  <Select value={modePaiement} onValueChange={setModePaiement}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="especes">Espèces</SelectItem>
-                      <SelectItem value="virement">Virement bancaire</SelectItem>
-                      <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                      <SelectItem value="cheque">Chèque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
+              </div>
             ) : (
-              <p className="text-sm text-gray-600">
-                Aucun frais d&apos;inscription configuré pour cette filière. L&apos;étudiant sera marqué comme inscrit.
+              <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                Aucun tarif configuré pour cette filière.
               </p>
             )}
+
+            {/* ── Section 2 : Premier versement scolarité ── */}
+            {tarif && totalScolarite > 0 && (
+              <div className="space-y-3 border-t border-gray-100 pt-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Premier versement scolarité</p>
+                <div className="bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-600">
+                  Total scolarité : <span className="font-bold text-gray-900">{formatMoney(totalScolarite)}</span>
+                  <span className="text-xs ml-1">({tarif.nb_mensualites} × {formatMoney(tarif.mensualite)})</span>
+                </div>
+
+                <div className="flex gap-2">
+                  {(['none', 'mensualite', 'avance'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => onVersementTypeChange(v)}
+                      className={`flex-1 text-xs py-2 px-3 rounded-lg border font-medium transition-colors ${
+                        versementType === v
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {v === 'none' ? 'Aucun' : v === 'mensualite' ? '1 mensualité' : 'Avance libre'}
+                    </button>
+                  ))}
+                </div>
+
+                {versementType !== 'none' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Montant (FCFA)</Label>
+                      <Input
+                        type="number" min="0"
+                        value={montantVersement}
+                        onChange={(e) => setMontantVersement(e.target.value)}
+                        className="h-9 text-sm"
+                        readOnly={versementType === 'mensualite'}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Mode de paiement</Label>
+                      <Select value={modeVersement} onValueChange={setModeVersement}>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {MODES.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInscriptionDialog(false)}>Annuler</Button>
+
+          <DialogFooter className="pt-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button
               className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={handleValidateInscription}
+              onClick={handleConfirm}
               disabled={loading === 'activate'}
             >
-              {loading === 'activate' ? 'Validation...' : 'Confirmer'}
+              {loading === 'activate' ? 'Validation...' : 'Confirmer l&apos;inscription'}
             </Button>
           </DialogFooter>
         </DialogContent>
