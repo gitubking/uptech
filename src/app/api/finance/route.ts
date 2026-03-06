@@ -27,6 +27,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 })
     }
 
+    // Pour l'inscription : bloquer les doublons
+    if (type === 'inscription') {
+      const { data: existing } = await db
+        .from('paiements')
+        .select('id')
+        .eq('etudiant_id', etudiant_id)
+        .eq('annee_academique_id', annee_academique_id)
+        .eq('type', 'inscription')
+        .maybeSingle()
+      if (existing) {
+        return NextResponse.json({ success: true, id: existing.id, skipped: true })
+      }
+    }
+
     // Determine statut based on amounts
     let statut = 'en_attente'
     if (montant >= montant_total) {

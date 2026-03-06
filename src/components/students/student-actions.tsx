@@ -98,12 +98,15 @@ export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: 
         if (d.error) { setError(d.error); return }
       }
 
-      // 2. Versement scolarité optionnel
-      if (versementType !== 'none' && totalScolarite > 0) {
-        const montantV = parseFloat(montantVersement) || 0
-        if (montantV > 0) {
-          const d = await postPaiement('scolarite', montantV, totalScolarite, modeVersement)
+      // 2. Versement scolarité — redistribué en mensualités individuelles
+      if (versementType !== 'none' && tarif && tarif.mensualite > 0) {
+        let restant = parseFloat(montantVersement) || 0
+        while (restant > 0) {
+          const tranche = Math.min(restant, tarif.mensualite)
+          const d = await postPaiement('scolarite', tranche, tarif.mensualite, modeVersement)
           if (d.error) { setError(d.error); return }
+          restant = Math.round((restant - tranche) * 100) / 100
+          if (tranche < tarif.mensualite) break // paiement partiel → arrêter
         }
       }
 
