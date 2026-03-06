@@ -54,7 +54,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (authUser?.user) {
-      // Le trigger on_auth_user_created crée le profil depuis user_metadata
+      // Forcer le rôle enseignant dans le profil (ne pas se fier uniquement au trigger)
+      await db.from('profiles').upsert({
+        user_id: authUser.user.id,
+        role: 'enseignant',
+        nom: data.nom,
+        prenom: data.prenom,
+        email: data.email,
+      }, { onConflict: 'user_id' })
       await db.from('enseignants').update({ user_id: authUser.user.id }).eq('id', teacher.id)
     }
 
