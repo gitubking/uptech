@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { EnseignantSidebar } from '@/components/enseignant/enseignant-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -14,7 +14,9 @@ export default async function EnseignantLayout({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const db = createAdminClient()
+
+  const { data: profile } = await db
     .from('profiles')
     .select('*')
     .eq('user_id', user.id)
@@ -22,7 +24,7 @@ export default async function EnseignantLayout({
 
   if (!profile || profile.role !== 'enseignant') redirect('/dashboard')
 
-  const { data: enseignant } = await supabase
+  const { data: enseignant } = await db
     .from('enseignants')
     .select('id, nom, prenom')
     .eq('email', user.email ?? '')

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -42,7 +42,9 @@ export async function getEnseignantConnecte() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const db = createAdminClient()
+
+  const { data: profile } = await db
     .from('profiles')
     .select('*')
     .eq('user_id', user.id)
@@ -50,10 +52,11 @@ export async function getEnseignantConnecte() {
 
   if (!profile || profile.role !== 'enseignant') redirect('/dashboard')
 
-  const { data: enseignant } = await supabase
+  // Chercher par email (user_id peut ne pas être rempli sur les anciens comptes)
+  const { data: enseignant } = await db
     .from('enseignants')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('email', user.email ?? '')
     .single()
 
   return { profile, enseignant }
@@ -65,7 +68,7 @@ export async function getCoursEnseignant(
   enseignant_id: string,
   annee_academique_id?: string
 ): Promise<CoursRow[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // 1. Programmes affectés à cet enseignant
   let q = supabase
@@ -164,7 +167,7 @@ export async function getCoursEnseignant(
 // ─── Stats dashboard enseignant ───────────────────────────────────────────────
 
 export async function getDashboardStats(enseignant_id: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const [
     { data: programmes },
@@ -240,7 +243,7 @@ export async function getCoursAujourdhui(
   enseignant_id: string,
   allCours: CoursRow[]
 ): Promise<CoursRow[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const today = new Date().toISOString().split('T')[0]
 
   const { data: emargToday } = await supabase
@@ -264,7 +267,7 @@ export async function getCoursAujourdhui(
 export async function getPaiementsEnseignant(
   enseignant_id: string
 ): Promise<PaiementEnseignantRow[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   try {
     const { data, error } = await supabase
       .from('paiements_enseignants')
@@ -281,7 +284,7 @@ export async function getPaiementsEnseignant(
 // ─── Années académiques ───────────────────────────────────────────────────────
 
 export async function getAnneesAcademiques() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data } = await supabase
     .from('annees_academiques')
     .select('id, libelle, actif')
