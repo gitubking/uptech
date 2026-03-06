@@ -48,24 +48,24 @@ export function ClasseForm({ filieres, annees, anneeActive, onSuccess }: Props) 
 
   const filiereSelectionnee = filieres.find(f => f.id === filiereId)
 
-  function genererCode(dateRentree: string) {
-    if (!filiereSelectionnee || !dateRentree) return ''
+  function genererCodeEtNom(dateRentree: string) {
+    if (!filiereSelectionnee || !dateRentree) return { code: '', nom: '' }
     const d = new Date(dateRentree)
+    const annee = d.getFullYear()
     const moisCourt = d.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '')
-    const annee = String(d.getFullYear()).slice(2)
-    return `${filiereSelectionnee.code}-${moisCourt}${annee}`
+    const moisLong = d.toLocaleDateString('fr-FR', { month: 'long' })
+    const code = `${filiereSelectionnee.code}-${moisCourt}-${annee}`
+    const nom = `${filiereSelectionnee.code} — ${moisLong} - ${annee}`
+    return { code, nom }
   }
 
   function onDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const code = genererCode(e.target.value)
+    const { code, nom } = genererCodeEtNom(e.target.value)
     const form = e.target.form
     const nomInput = form?.querySelector('[name="nom"]') as HTMLInputElement | null
     const codeInput = form?.querySelector('[name="code"]') as HTMLInputElement | null
     if (code && codeInput && !codeInput.dataset.modified) codeInput.value = code
-    if (filiereSelectionnee && nomInput && !nomInput.dataset.modified) {
-      const label = new Date(e.target.value).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-      nomInput.value = `${filiereSelectionnee.code} — ${label}`
-    }
+    if (nom && nomInput && !nomInput.dataset.modified) nomInput.value = nom
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -167,7 +167,7 @@ export function ClasseForm({ filieres, annees, anneeActive, onSuccess }: Props) 
           <Input
             name="nom"
             required
-            placeholder="ex: INFO — octobre 2025"
+            placeholder="ex: INFO — octobre - 2025"
             className="h-10"
             onInput={e => (e.currentTarget.dataset.modified = 'true')}
           />
@@ -177,7 +177,7 @@ export function ClasseForm({ filieres, annees, anneeActive, onSuccess }: Props) 
           <Input
             name="code"
             required
-            placeholder="ex: INFO-OCT25"
+            placeholder="ex: INFO-OCT-2025"
             className="h-10 font-mono"
             onInput={e => (e.currentTarget.dataset.modified = 'true')}
           />
