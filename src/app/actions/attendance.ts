@@ -223,7 +223,7 @@ export async function getRecentSessions(matiere_id?: string, limit = 10) {
   return sessions.map((s) => ({
     ...s,
     matiere: s.matiere
-      ? { ...(s.matiere as { id: string; nom: string; code: string }), filiere: filiereByMatiere.get(s.matiere_id) ?? null, niveau: null }
+      ? { ...(s.matiere as unknown as { id: string; nom: string; code: string }), filiere: filiereByMatiere.get(s.matiere_id) ?? null, niveau: null }
       : null,
   }))
 }
