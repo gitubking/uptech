@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import {
   getEnseignantConnecte,
   getDashboardStats,
@@ -41,7 +40,7 @@ function BannerCard({
 
 export default async function EnseignantDashboardPage() {
   const { enseignant } = await getEnseignantConnecte()
-  if (!enseignant) redirect('/login')
+  if (!enseignant) redirect('/login?error=profil_introuvable')
 
   const [stats, allCours] = await Promise.all([
     getDashboardStats(enseignant.id),

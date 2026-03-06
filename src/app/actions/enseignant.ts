@@ -52,12 +52,32 @@ export async function getEnseignantConnecte() {
 
   if (!profile || profile.role !== 'enseignant') redirect('/dashboard')
 
-  // Chercher par email (user_id peut ne pas être rempli sur les anciens comptes)
-  const { data: enseignant } = await db
+  // 1. Chercher par user_id
+  let { data: enseignant } = await db
     .from('enseignants')
     .select('*')
-    .eq('email', user.email ?? '')
+    .eq('user_id', user.id)
     .single()
+
+  // 2. Fallback: email exact
+  if (!enseignant && user.email) {
+    const { data: byEmail } = await db
+      .from('enseignants')
+      .select('*')
+      .eq('email', user.email)
+      .single()
+    enseignant = byEmail ?? null
+  }
+
+  // 3. Fallback: email insensible à la casse
+  if (!enseignant && user.email) {
+    const { data: byEmailIlike } = await db
+      .from('enseignants')
+      .select('*')
+      .ilike('email', user.email)
+      .single()
+    enseignant = byEmailIlike ?? null
+  }
 
   return { profile, enseignant }
 }

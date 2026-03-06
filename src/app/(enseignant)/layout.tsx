@@ -24,11 +24,32 @@ export default async function EnseignantLayout({
 
   if (!profile || profile.role !== 'enseignant') redirect('/dashboard')
 
-  const { data: enseignant } = await db
+  // 1. Chercher par user_id
+  let { data: enseignant } = await db
     .from('enseignants')
     .select('id, nom, prenom')
-    .eq('email', user.email ?? '')
+    .eq('user_id', user.id)
     .single()
+
+  // 2. Fallback: email exact
+  if (!enseignant && user.email) {
+    const { data: byEmail } = await db
+      .from('enseignants')
+      .select('id, nom, prenom')
+      .eq('email', user.email)
+      .single()
+    enseignant = byEmail ?? null
+  }
+
+  // 3. Fallback: email insensible à la casse
+  if (!enseignant && user.email) {
+    const { data: byIlike } = await db
+      .from('enseignants')
+      .select('id, nom, prenom')
+      .ilike('email', user.email)
+      .single()
+    enseignant = byIlike ?? null
+  }
 
   const stats = enseignant ? await getDashboardStats(enseignant.id) : null
 
