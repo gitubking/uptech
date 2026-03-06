@@ -32,8 +32,8 @@ export async function getMatieresForAttendance(filiere_id?: string, _niveau_id?:
   }> = []
 
   for (const p of data ?? []) {
-    const m = p.matiere as { id: string; nom: string; code: string } | null
-    const f = p.filiere as { id: string; nom: string; code: string } | null
+    const m = p.matiere as unknown as { id: string; nom: string; code: string } | null
+    const f = p.filiere as unknown as { id: string; nom: string; code: string } | null
     if (!m) continue
     const key = `${m.id}-${p.filiere_id}`
     if (seen.has(key)) continue
@@ -80,7 +80,7 @@ export async function getAttendanceForDate(matiere_id: string, date_cours: strin
     ...matiere,
     semestre: prog.semestre,
     filiere_id: prog.filiere_id,
-    filiere: prog.filiere as { id: string; nom: string; code: string } | null,
+    filiere: prog.filiere as unknown as { id: string; nom: string; code: string } | null,
     niveau: null,
   }
 
@@ -137,7 +137,7 @@ export async function getStudentAttendanceStats(etudiant_id: string) {
     .eq('filiere_id', etudiant.filiere_id)
 
   const matieres = (programmes ?? [])
-    .map((p) => p.matiere as { id: string; nom: string; code: string } | null)
+    .map((p) => p.matiere as unknown as { id: string; nom: string; code: string } | null)
     .filter((m): m is { id: string; nom: string; code: string } => m !== null)
 
   if (mErr) throw mErr
@@ -216,7 +216,7 @@ export async function getRecentSessions(matiere_id?: string, limit = 10) {
   const filiereByMatiere = new Map<string, { nom: string } | null>()
   for (const p of progs ?? []) {
     if (!filiereByMatiere.has(p.matiere_id)) {
-      filiereByMatiere.set(p.matiere_id, p.filiere as { nom: string } | null)
+      filiereByMatiere.set(p.matiere_id, p.filiere as unknown as { nom: string } | null)
     }
   }
 
