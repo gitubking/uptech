@@ -52,6 +52,15 @@ export default async function EnseignantDashboardPage() {
   return (
     <div className="space-y-8 max-w-6xl">
 
+      {/* ── DEBUG temporaire ── */}
+      <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 text-xs font-mono text-yellow-900 space-y-1">
+        <p><b>enseignant.id:</b> {enseignant.id}</p>
+        <p><b>enseignant.nom:</b> {enseignant.nom}</p>
+        <p><b>allCours.length:</b> {allCours.length}</p>
+        <p><b>stats.revenus:</b> {stats.revenus}</p>
+        <p><b>stats.nbClasses:</b> {stats.nbClasses}</p>
+      </div>
+
       {/* ── Bannière de bienvenue ── */}
       <div className="bg-[#CC1F1F] rounded-2xl p-6">
         <h1 className="text-white font-semibold text-base">Bienvenue à UPTECH,</h1>
