@@ -118,6 +118,19 @@ export async function deleteClasse(id: string) {
   return { success: true }
 }
 
+// ─── Récupérer les étudiants d'une filière pour affectation ──────────────────
+export async function getEtudiantsParFiliere(filiere_id: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('etudiants')
+    .select('id, matricule, nom, prenom, statut, classe_id')
+    .eq('filiere_id', filiere_id)
+    .in('statut', ['inscrit', 'preinscrit'])
+    .order('nom')
+  if (error) throw error
+  return data ?? []
+}
+
 // ─── Affecter un étudiant à une classe ────────────────────────────────────────
 export async function affecterEtudiantClasse(etudiant_id: string, classe_id: string | null) {
   const db = createAdminClient()

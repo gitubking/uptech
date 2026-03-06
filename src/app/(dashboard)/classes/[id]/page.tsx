@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, Calendar, Users, BookOpen, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { getClasseById } from '@/app/actions/classes'
+import { getClasseById, getEtudiantsParFiliere } from '@/app/actions/classes'
 import { ClasseActions } from '@/components/classes/classe-actions'
+import { AffectationDialog } from '@/components/classes/affectation-dialog'
 
 const STATUT_CONFIG: Record<string, { label: string; class: string }> = {
   en_preparation: { label: 'En préparation', class: 'bg-amber-100 text-amber-700 border-amber-200' },
@@ -37,9 +38,14 @@ export default async function ClasseDetailPage({ params }: Props) {
 
   if (!classe) notFound()
 
-  const filiere = classe.filiere as { nom: string; code: string; type_formation?: string } | null
+  const filiere = classe.filiere as { id: string; nom: string; code: string; type_formation?: string } | null
   const annee = classe.annee_academique as { libelle: string } | null
   const etudiants = (classe.etudiants ?? []) as { id: string; matricule: string; nom: string; prenom: string; statut: string }[]
+
+  // Tous les étudiants de la même filière pour le dialog d'affectation
+  const tousEtudiantsFiliere = filiere?.id
+    ? await getEtudiantsParFiliere(filiere.id)
+    : []
   const statut = STATUT_CONFIG[classe.statut] ?? STATUT_CONFIG['en_preparation']
   const rentree = new Date(classe.date_rentree).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 
@@ -122,12 +128,18 @@ export default async function ClasseDetailPage({ params }: Props) {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
           <h2 className="font-semibold text-gray-900 text-sm">Étudiants affectés</h2>
+          <AffectationDialog
+            classeId={classe.id}
+            classeNom={classe.nom}
+            filiereId={filiere?.id ?? ''}
+            etudiants={tousEtudiantsFiliere}
+          />
         </div>
         {etudiants.length === 0 ? (
           <div className="text-center py-12">
             <Users className="h-8 w-8 text-gray-200 mx-auto mb-2" />
             <p className="text-sm text-gray-400">Aucun étudiant affecté à cette classe</p>
-            <p className="text-xs text-gray-300 mt-1">Affectez des étudiants depuis leurs fiches individuelles</p>
+            <p className="text-xs text-gray-300 mt-1">Cliquez sur &quot;Affecter des étudiants&quot; pour commencer.</p>
           </div>
         ) : (
           <table className="w-full text-sm">
