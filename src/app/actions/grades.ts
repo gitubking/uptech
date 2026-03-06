@@ -12,6 +12,7 @@ export async function getMatieres(filters?: {
   niveau_id?: string // gardé pour compatibilité URL, ignoré côté DB
   semestre?: string
   annee_id?: string
+  enseignant_id?: string
 }) {
   const supabase = await createClient()
 
@@ -28,6 +29,7 @@ export async function getMatieres(filters?: {
   if (filters?.filiere_id) query = query.eq('filiere_id', filters.filiere_id)
   if (filters?.semestre) query = query.eq('semestre', filters.semestre)
   if (filters?.annee_id) query = query.eq('annee_academique_id', filters.annee_id)
+  if (filters?.enseignant_id) query = query.eq('enseignant_id', filters.enseignant_id)
 
   const { data: programmes, error } = await query
   if (error) throw error

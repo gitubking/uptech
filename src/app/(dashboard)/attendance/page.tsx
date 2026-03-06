@@ -4,11 +4,23 @@ import { getFormationData } from '@/app/actions/grades'
 import { AttendanceFilter } from '@/components/attendance/attendance-filter'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function AttendancePage() {
+  // Détecter si l'utilisateur est un enseignant pour filtrer ses matières
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('user_id', user?.id ?? '').single()
+
+  let enseignant_id: string | undefined
+  if (profile?.role === 'enseignant') {
+    const { data: ens } = await supabase.from('enseignants').select('id').eq('user_id', user?.id ?? '').single()
+    enseignant_id = ens?.id ?? undefined
+  }
+
   const [{ filieres, niveaux }, matieres, recentSessions] = await Promise.all([
     getFormationData(),
-    getMatieresForAttendance(),
+    getMatieresForAttendance(undefined, undefined, enseignant_id),
     getRecentSessions(undefined, 8),
   ])
 
@@ -27,13 +39,15 @@ export default async function AttendancePage() {
           <h1 className="text-2xl font-bold text-gray-900">Présences</h1>
           <p className="text-gray-500 text-sm mt-1">Gestion des feuilles de présence</p>
         </div>
-        <Link
-          href="/attendance/emarger"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-        >
-          <PenLine className="h-4 w-4" />
-          Émargement enseignants
-        </Link>
+        {profile?.role !== 'enseignant' && (
+          <Link
+            href="/attendance/emarger"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+          >
+            <PenLine className="h-4 w-4" />
+            Émargement enseignants
+          </Link>
+        )}
       </div>
 
       {/* Stats */}

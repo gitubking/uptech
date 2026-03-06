@@ -1,12 +1,23 @@
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { PaiementsClient } from '@/components/teachers/paiements-client'
 import { AlertCircle } from 'lucide-react'
 
 export default async function PaiementsEnseignantsPage() {
   const admin = await createAdminClient()
 
-  // ── 1. Émargements avec enseignant + matiere (filiere_id inclus) ──
-  const { data: emargements, error: eErr } = await admin
+  // Détecter si l'utilisateur est un enseignant (affiche seulement ses données)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('user_id', user?.id ?? '').single()
+
+  let filterEnseignantId: string | undefined
+  if (profile?.role === 'enseignant') {
+    const { data: ens } = await supabase.from('enseignants').select('id').eq('user_id', user?.id ?? '').single()
+    filterEnseignantId = ens?.id ?? undefined
+  }
+
+  // ── 1. Émargements avec enseignant + matiere ──
+  let emargQuery = admin
     .from('emargements')
     .select(`
       id, enseignant_id, matiere_id, date_cours, heure_debut, heure_fin,
@@ -14,6 +25,10 @@ export default async function PaiementsEnseignantsPage() {
       matiere:matieres(id, code, nom)
     `)
     .order('date_cours', { ascending: false })
+
+  if (filterEnseignantId) emargQuery = emargQuery.eq('enseignant_id', filterEnseignantId)
+
+  const { data: emargements, error: eErr } = await emargQuery
 
   if (eErr) {
     return (
@@ -29,12 +44,16 @@ export default async function PaiementsEnseignantsPage() {
     )
   }
 
-  // ── 2. Enseignants ──
-  const { data: enseignants } = await admin
+  // ── 2. Enseignants (filtré pour un enseignant connecté) ──
+  let ensQuery = admin
     .from('enseignants')
     .select('id, nom, prenom, matricule')
     .eq('actif', true)
     .order('nom')
+
+  if (filterEnseignantId) ensQuery = ensQuery.eq('id', filterEnseignantId)
+
+  const { data: enseignants } = await ensQuery
 
   // ── 3. Types de formation + filières (migration 003 — peut ne pas exister) ──
   let typeFormations: Array<{

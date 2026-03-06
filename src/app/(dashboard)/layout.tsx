@@ -7,9 +7,10 @@ import { Toaster } from '@/components/ui/sonner'
 import { ShieldX } from 'lucide-react'
 
 const ROUTE_ROLES: Record<string, string[]> = {
-  '/students':      ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'],
-  '/teachers':      ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'],
-  '/courses':       ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant'],
+  '/students':           ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'],
+  '/teachers/paiements': ['super_admin', 'directeur', 'agent_comptable', 'enseignant'],
+  '/teachers':           ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'],
+  '/courses':            ['super_admin', 'directeur', 'responsable_pedagogique'],
   '/grades':        ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant', 'etudiant'],
   '/attendance':    ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant', 'etudiant'],
   '/finance':       ['super_admin', 'directeur', 'agent_comptable'],

@@ -3,6 +3,7 @@ import { getMatieres, getFormationData, getActiveAnnee } from '@/app/actions/gra
 import { Button } from '@/components/ui/button'
 import { BookOpen, CheckCircle2, Clock, PenLine, ChevronRight, GraduationCap } from 'lucide-react'
 import { GradesFilters } from '@/components/grades/grades-filters'
+import { createClient } from '@/lib/supabase/server'
 
 interface PageProps {
   searchParams: Promise<{ filiere_id?: string; niveau_id?: string; semestre?: string }>
@@ -15,12 +16,25 @@ const SEMESTRE_CONFIG: Record<string, { label: string; color: string }> = {
 
 export default async function GradesPage({ searchParams }: PageProps) {
   const filters = await searchParams
+
+  // Détecter si enseignant pour filtrer ses matières
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('user_id', user?.id ?? '').single()
+
+  let enseignant_id: string | undefined
+  if (profile?.role === 'enseignant') {
+    const { data: ens } = await supabase.from('enseignants').select('id').eq('user_id', user?.id ?? '').single()
+    enseignant_id = ens?.id ?? undefined
+  }
+
   const [annee, formationData] = await Promise.all([getActiveAnnee(), getFormationData()])
   const matieres = await getMatieres({
     filiere_id: filters.filiere_id,
     niveau_id: filters.niveau_id,
     semestre: filters.semestre,
     annee_id: annee?.id,
+    enseignant_id,
   })
   const total = matieres.length
   const avecNotes = matieres.filter((m) => m.notes_saisies > 0).length
@@ -35,12 +49,14 @@ export default async function GradesPage({ searchParams }: PageProps) {
             {annee ? `Année académique : ${annee.libelle}` : 'Gestion des notes et bulletins'}
           </p>
         </div>
-        <Link href="/grades/classe">
-          <Button className="gap-2 bg-black hover:bg-gray-900 text-white" size="sm">
-            <GraduationCap className="h-4 w-4" />
-            Bulletins de classe
-          </Button>
-        </Link>
+        {profile?.role !== 'enseignant' && (
+          <Link href="/grades/classe">
+            <Button className="gap-2 bg-black hover:bg-gray-900 text-white" size="sm">
+              <GraduationCap className="h-4 w-4" />
+              Bulletins de classe
+            </Button>
+          </Link>
+        )}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <StatCard icon={BookOpen} label="Total matières" value={total} color="blue" />

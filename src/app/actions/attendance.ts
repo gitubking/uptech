@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // ─── Récupérer les matières pour les filtres présences ───────────────────────
 // Après migration 010 : filiere_id/niveau_id sont sur programme, pas matieres
-export async function getMatieresForAttendance(filiere_id?: string, _niveau_id?: string) {
+export async function getMatieresForAttendance(filiere_id?: string, _niveau_id?: string, enseignant_id?: string) {
   const supabase = await createClient()
 
   let query = supabase
@@ -17,6 +17,7 @@ export async function getMatieresForAttendance(filiere_id?: string, _niveau_id?:
     .order('semestre', { ascending: true })
 
   if (filiere_id) query = query.eq('filiere_id', filiere_id)
+  if (enseignant_id) query = query.eq('enseignant_id', enseignant_id)
 
   const { data, error } = await query
   if (error) throw error
