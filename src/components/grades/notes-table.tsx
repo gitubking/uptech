@@ -24,11 +24,11 @@ interface Matiere {
   id: string
   code: string
   nom: string
-  coefficient: number
-  credit: number
-  semestre: string
-  filiere_id: string
-  niveau_id: string
+  coefficient?: number
+  credit?: number
+  semestre?: string
+  filiere_id?: string
+  niveau_id?: string
   filiere?: { id: string; nom: string; code: string } | null
   niveau?: { id: string; nom: string; ordre: number } | null
   enseignant?: { id: string; nom: string; prenom: string } | null

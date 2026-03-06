@@ -75,7 +75,7 @@ export default async function SaisirPage({ searchParams }: PageProps) {
           <span className="font-mono text-gray-400 text-xs">({matiere.code})</span>
           {' — '}
           {matiere.filiere?.nom ?? ''}{' '}
-          {matiere.niveau?.nom ?? ''}
+          {(matiere.niveau as { nom?: string } | null)?.nom ?? ''}
         </p>
       </div>
       <NotesTable matiere={matiere} students={students} annee_id={annee_id} />

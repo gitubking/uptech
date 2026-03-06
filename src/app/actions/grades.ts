@@ -2,6 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 
+type MatiereRef = { id: string; nom: string; code: string }
+type FiliereRef = { id: string; nom: string; code: string }
+type EnseignantRef = { id: string; nom: string; prenom: string }
+
 // ─── Recuperer les programme (matières par filière) avec filtres ──────────────
 export async function getMatieres(filters?: {
   filiere_id?: string
@@ -31,8 +35,9 @@ export async function getMatieres(filters?: {
 
   const enriched = await Promise.all(
     programmes.map(async (prog) => {
-      const matiere = prog.matiere as { id: string; nom: string; code: string } | null
-      const filiere = prog.filiere as { id: string; nom: string; code: string } | null
+      const matiere = (prog.matiere as unknown) as MatiereRef | null
+      const filiere = (prog.filiere as unknown) as FiliereRef | null
+      const enseignant = (prog.enseignant as unknown) as EnseignantRef | null
 
       const { count: totalStudents } = await supabase
         .from('etudiants')
@@ -50,7 +55,7 @@ export async function getMatieres(filters?: {
       const { count: notesCount } = await notesQuery
 
       return {
-        id: prog.id, // programme ID — utilisé dans le lien saisie
+        id: prog.id,
         nom: matiere?.nom ?? '',
         code: matiere?.code ?? '',
         semestre: prog.semestre,
@@ -58,8 +63,8 @@ export async function getMatieres(filters?: {
         credit: prog.credit,
         volume_horaire: prog.volume_horaire,
         filiere,
-        niveau: null,
-        enseignant: prog.enseignant,
+        niveau: null as null,
+        enseignant,
         total_etudiants: totalStudents ?? 0,
         notes_saisies: notesCount ?? 0,
       }
@@ -84,10 +89,11 @@ export async function getStudentsWithNotes(programme_id: string, annee_id: strin
     .eq('id', programme_id)
     .single()
 
-  if (progError || !prog) return { matiere: null, students: [] }
+  if (progError || !prog) return { matiere: null, students: [] as Student[] }
 
-  const matiere = prog.matiere as { id: string; nom: string; code: string } | null
-  const filiere = prog.filiere as { id: string; nom: string; code: string } | null
+  const matiere = (prog.matiere as unknown) as MatiereRef | null
+  const filiere = (prog.filiere as unknown) as FiliereRef | null
+  const enseignant = (prog.enseignant as unknown) as EnseignantRef | null
 
   const { data: etudiants, error: studentsError } = await supabase
     .from('etudiants')
@@ -103,12 +109,12 @@ export async function getStudentsWithNotes(programme_id: string, annee_id: strin
     nom: matiere?.nom ?? '',
     code: matiere?.code ?? '',
     filiere,
-    niveau: null,
-    enseignant: prog.enseignant,
+    niveau: null as null,
+    enseignant,
   }
 
   if (!etudiants || etudiants.length === 0) {
-    return { matiere: matiereInfo, students: [] }
+    return { matiere: matiereInfo, students: [] as Student[] }
   }
 
   const { data: notes, error: notesError } = await supabase
@@ -136,6 +142,12 @@ export async function getStudentsWithNotes(programme_id: string, annee_id: strin
   return { matiere: matiereInfo, students }
 }
 
+type Student = {
+  id: string; matricule: string; nom: string; prenom: string
+  note_id: string | null; note_normale: number | null; note_rattrapage: number | null
+  note_finale: number | null; mention: string | null
+}
+
 // ─── Recuperer le bulletin d'un etudiant ─────────────────────────────────────
 export async function getBulletin(etudiant_id: string, annee_id: string) {
   const supabase = await createClient()
@@ -145,14 +157,19 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
     .select(`
       id, matricule, nom, prenom, filiere_id,
       filiere:filieres(id, nom, code),
-      niveau:niveaux(id, nom, ordre),
-      annee_academique:annees_academiques(id, libelle)
+      niveau:niveaux(id, nom, ordre)
     `)
     .eq('id', etudiant_id)
     .single()
 
   if (etudiantError) throw etudiantError
   if (!etudiant) return { etudiant: null, matieres: [], annee: null }
+
+  const etudiantTyped = {
+    ...etudiant,
+    filiere: (etudiant.filiere as unknown) as FiliereRef | null,
+    niveau: (etudiant.niveau as unknown) as { id: string; nom: string; ordre: number } | null,
+  }
 
   const { data: annee, error: anneeError } = await supabase
     .from('annees_academiques')
@@ -162,7 +179,6 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
 
   if (anneeError) throw anneeError
 
-  // Matières via programme pour la filière de l'étudiant
   const { data: programmes, error: matieresError } = await supabase
     .from('programme')
     .select(`
@@ -177,11 +193,11 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
   if (matieresError) throw matieresError
 
   if (!programmes || programmes.length === 0) {
-    return { etudiant, matieres: [], annee }
+    return { etudiant: etudiantTyped, matieres: [], annee }
   }
 
   const matiereIds = programmes
-    .map((p) => (p.matiere as { id: string } | null)?.id)
+    .map((p) => ((p.matiere as unknown) as MatiereRef | null)?.id)
     .filter(Boolean) as string[]
 
   const { data: notes, error: notesError } = await supabase
@@ -196,17 +212,18 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
   const notesMap = new Map((notes ?? []).map((n) => [n.matiere_id, n]))
 
   const matieresWithNotes = programmes.map((prog) => {
-    const matiere = prog.matiere as { id: string; nom: string; code: string } | null
+    const matiere = (prog.matiere as unknown) as MatiereRef | null
+    const enseignant = (prog.enseignant as unknown) as EnseignantRef | null
     const note = matiere ? notesMap.get(matiere.id) : null
     return {
       id: prog.id,
       nom: matiere?.nom ?? '',
       code: matiere?.code ?? '',
-      semestre: prog.semestre,
-      coefficient: prog.coefficient,
-      credit: prog.credit,
-      volume_horaire: prog.volume_horaire,
-      enseignant: prog.enseignant,
+      semestre: prog.semestre as string,
+      coefficient: prog.coefficient as number,
+      credit: prog.credit as number,
+      volume_horaire: prog.volume_horaire as number,
+      enseignant,
       note_id: note?.id ?? null,
       note_normale: note?.note_normale ?? null,
       note_rattrapage: note?.note_rattrapage ?? null,
@@ -215,7 +232,7 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
     }
   })
 
-  return { etudiant, matieres: matieresWithNotes, annee }
+  return { etudiant: etudiantTyped, matieres: matieresWithNotes, annee }
 }
 
 // ─── Recuperer l'annee academique active ─────────────────────────────────────
@@ -243,7 +260,6 @@ export async function getEtudiantsClasse(filiere_id: string, niveau_id: string, 
 
   if (error || !etudiants) return []
 
-  // Récupérer les coefficients depuis programme
   const { data: programmes } = await supabase
     .from('programme')
     .select('matiere_id, coefficient')

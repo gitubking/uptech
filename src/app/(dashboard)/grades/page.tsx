@@ -94,7 +94,7 @@ export default async function GradesPage({ searchParams }: PageProps) {
                     <td className="px-4 py-3 hidden md:table-cell">
                       <div className="text-xs text-gray-600 space-y-0.5">
                         <p className="font-medium">{matiere.filiere?.code ?? '—'}</p>
-                        <p className="text-gray-400">{matiere.niveau?.nom ?? '—'}</p>
+                        <p className="text-gray-400">{(matiere.niveau as { nom?: string } | null)?.nom ?? '—'}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">

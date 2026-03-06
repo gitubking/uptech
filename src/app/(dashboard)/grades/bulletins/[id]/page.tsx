@@ -68,6 +68,9 @@ export default async function BulletinPage({ params, searchParams }: PageProps) 
     )
   }
 
+  const filiereEtudiant = etudiant.filiere as unknown as { nom: string; code: string } | null
+  const niveauEtudiant = etudiant.niveau as unknown as { nom: string } | null
+
   const matieresAvecNote = matieres.filter((m) => m.note_finale !== null)
   const totalCoeff = matieresAvecNote.reduce((s, m) => s + (m.coefficient ?? 0), 0)
   const sommePoints = matieresAvecNote.reduce(
@@ -113,7 +116,7 @@ export default async function BulletinPage({ params, searchParams }: PageProps) 
               <span className="font-mono bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded mr-2">
                 {etudiant.matricule}
               </span>
-              {etudiant.filiere?.nom} — {etudiant.niveau?.nom}
+              {filiereEtudiant?.nom} — {niveauEtudiant?.nom}
             </p>
           </div>
           {moyenne !== null && (
