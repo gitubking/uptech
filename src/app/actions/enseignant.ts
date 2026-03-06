@@ -79,7 +79,6 @@ export async function getEnseignantConnecte() {
     enseignant = byEmailIlike ?? null
   }
 
-  console.log('[getEnseignantConnecte] user.email:', user.email, '| user.id:', user.id, '| enseignant trouvé:', enseignant?.id ?? 'NULL')
   return { profile, enseignant }
 }
 
@@ -90,7 +89,6 @@ export async function getCoursEnseignant(
   annee_academique_id?: string
 ): Promise<CoursRow[]> {
   const supabase = createAdminClient()
-  console.log('[getCoursEnseignant] enseignant_id:', enseignant_id)
 
   // 1. Programmes affectés à cet enseignant
   let q = supabase
@@ -105,8 +103,7 @@ export async function getCoursEnseignant(
 
   if (annee_academique_id) q = q.eq('annee_academique_id', annee_academique_id)
 
-  const { data: programmes, error: progError } = await q
-  console.log('[getCoursEnseignant] programmes:', programmes?.length ?? 0, '| error:', progError?.message ?? 'none')
+  const { data: programmes } = await q
   if (!programmes?.length) return []
 
   // 2. Classes liées aux filières/années de ces programmes

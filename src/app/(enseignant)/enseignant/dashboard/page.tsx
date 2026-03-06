@@ -38,19 +38,8 @@ function BannerCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function EnseignantDashboardPage() {
-  const { profile, enseignant } = await getEnseignantConnecte()
-
-  if (!enseignant) {
-    return (
-      <div className="bg-red-50 border border-red-300 rounded-lg p-4 text-sm font-mono text-red-900 space-y-2">
-        <p className="font-bold">❌ Enseignant introuvable</p>
-        <p><b>profile.user_id:</b> {profile?.user_id ?? 'null'}</p>
-        <p><b>profile.role:</b> {profile?.role ?? 'null'}</p>
-        <p><b>profile.email:</b> {profile?.email ?? 'null'}</p>
-        <p className="mt-2 text-xs text-gray-500">Vérifiez que cet email existe dans la table enseignants</p>
-      </div>
-    )
-  }
+  const { enseignant } = await getEnseignantConnecte()
+  if (!enseignant) return null
 
   const [stats, allCours] = await Promise.all([
     getDashboardStats(enseignant.id),
@@ -61,15 +50,6 @@ export default async function EnseignantDashboardPage() {
 
   return (
     <div className="space-y-8 max-w-6xl">
-
-      {/* ── DEBUG temporaire ── */}
-      <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 text-xs font-mono text-yellow-900 space-y-1">
-        <p><b>enseignant.id:</b> {enseignant.id}</p>
-        <p><b>enseignant.nom:</b> {enseignant.nom}</p>
-        <p><b>allCours.length:</b> {allCours.length}</p>
-        <p><b>stats.revenus:</b> {stats.revenus}</p>
-        <p><b>stats.nbClasses:</b> {stats.nbClasses}</p>
-      </div>
 
       {/* ── Bannière de bienvenue ── */}
       <div className="bg-[#CC1F1F] rounded-2xl p-6">
