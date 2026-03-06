@@ -53,12 +53,14 @@ export async function POST(request: NextRequest) {
       // Le trigger on_auth_user_created crée le profil avec nom/prénom/role depuis user_metadata
       await db.from('enseignants').update({ user_id: authUser.user.id }).eq('id', teacher.id)
 
-      // 2. Générer un lien de récupération (plus fiable que le lien invite)
-      const { data: linkData } = await db.auth.admin.generateLink({
-        type: 'recovery',
+      // 2. Générer un magic link (approprié pour les nouveaux comptes sans mot de passe)
+      const { data: linkData, error: linkError } = await db.auth.admin.generateLink({
+        type: 'magiclink',
         email: data.email,
         options: { redirectTo: `${siteUrl}/update-password` },
       })
+
+      if (linkError) console.error('generateLink error:', linkError.message)
 
       const actionLink = linkData?.properties?.action_link
       if (actionLink) {
@@ -128,9 +130,9 @@ export async function PUT(request: NextRequest) {
         })
       }
 
-      // Générer un lien de récupération (fiable pour les comptes confirmés)
+      // Générer un magic link (fonctionne avec ou sans mot de passe)
       const { data: linkData, error: linkError } = await db.auth.admin.generateLink({
-        type: 'recovery',
+        type: 'magiclink',
         email: teacher.email,
         options: { redirectTo: `${siteUrl}/update-password` },
       })
