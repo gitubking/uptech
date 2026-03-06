@@ -13,7 +13,8 @@ export async function GET(request: Request) {
     .select(`
       id, date_cours, heure_debut, heure_fin, chapitre, observations, created_at,
       enseignant:enseignants(id, nom, prenom),
-      matiere:matieres(id, code, nom, filiere:filieres(code, nom), niveau:niveaux(nom))
+      matiere:matieres(id, code, nom),
+      classe:classes(id, nom, code)
     `)
     .order('date_cours', { ascending: false })
     .order('created_at', { ascending: false })
@@ -37,21 +38,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 })
   }
 
-  const { enseignant_id, matiere_id, date_cours, heure_debut, heure_fin, chapitre, observations } = body
+  const { enseignant_id, matiere_id, classe_id, date_cours, heure_debut, heure_fin, chapitre, observations } = body
 
   if (!enseignant_id || !matiere_id || !date_cours) {
     return NextResponse.json({ error: 'Enseignant, matière et date sont requis.' }, { status: 400 })
   }
 
   const row: Record<string, unknown> = { enseignant_id, matiere_id, date_cours }
+  if (classe_id) row.classe_id = classe_id
   if (heure_debut) row.heure_debut = heure_debut
   if (heure_fin) row.heure_fin = heure_fin
   if (chapitre) row.chapitre = chapitre
   if (observations) row.observations = observations
 
+  // La contrainte UNIQUE inclut maintenant classe_id
+  const onConflict = classe_id
+    ? 'enseignant_id,matiere_id,classe_id,date_cours'
+    : 'enseignant_id,matiere_id,date_cours'
+
   const { data, error } = await supabase
     .from('emargements')
-    .upsert(row, { onConflict: 'enseignant_id,matiere_id,date_cours' })
+    .upsert(row, { onConflict })
     .select()
     .single()
 

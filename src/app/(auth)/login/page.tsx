@@ -1,16 +1,19 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { login } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 import Image from 'next/image'
 
 export default function LoginPage() {
   const [state, action, isPending] = useActionState(login, null)
+  const searchParams = useSearchParams()
+  const message = searchParams.get('message')
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -33,6 +36,14 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form action={action} className="space-y-4">
+
+              {/* Message de succès (ex: après définition du mot de passe) */}
+              {message && (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  <span>{message}</span>
+                </div>
+              )}
 
               {/* Message d'erreur */}
               {state?.error && (
