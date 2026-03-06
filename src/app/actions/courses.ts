@@ -9,7 +9,7 @@ export async function getCoursesData() {
   const [
     { data: filieres, error: fe },
     { data: niveaux, error: ne },
-    { data: matieres, error: me },
+    { data: programme, error: me },
     { data: enseignants, error: ee },
     { data: etudiants },
   ] = await Promise.all([
@@ -22,16 +22,16 @@ export async function getCoursesData() {
       .from('niveaux')
       .select('id, nom, filiere_id, ordre, filiere:filieres(id, nom, code)')
       .order('ordre'),
+    // Programme = matière × filière × année (matieres a perdu filiere_id/coefficient/etc. en migration 010)
     supabase
-      .from('matieres')
+      .from('programme')
       .select(`
-        id, code, nom, coefficient, credit, semestre, volume_horaire,
-        filiere_id, niveau_id, enseignant_id,
+        id, semestre, coefficient, credit, volume_horaire, filiere_id, enseignant_id,
+        matiere:matieres(id, nom, code),
         filiere:filieres(id, nom, code),
-        niveau:niveaux(id, nom),
         enseignant:enseignants(id, nom, prenom)
       `)
-      .order('code'),
+      .order('semestre'),
     supabase
       .from('enseignants')
       .select('id, nom, prenom')
@@ -85,10 +85,36 @@ export async function getCoursesData() {
     typeFormations = []
   }
 
+  // Mapper les entrées programme vers la forme MatiereRow attendue par CoursesClient
+  type MatRef = { id: string; nom: string; code: string }
+  type FilRef = { id: string; nom: string; code: string }
+  type EnsRef = { id: string; nom: string; prenom: string }
+  const matieres = (programme ?? []).map((p) => {
+    const matiere = (p.matiere as unknown as MatRef | null)
+    const filiere = (p.filiere as unknown as FilRef | null)
+    const enseignant = (p.enseignant as unknown as EnsRef | null)
+    return {
+      id: p.id,                        // programme.id (utilisé pour edit/delete)
+      matiere_id: matiere?.id ?? '',   // matières catalogue id (pour update nom/code)
+      code: matiere?.code ?? '',
+      nom: matiere?.nom ?? '',
+      coefficient: Number(p.coefficient) || 1,
+      credit: p.credit || 0,
+      semestre: Number(p.semestre) || 1,
+      volume_horaire: p.volume_horaire || 0,
+      filiere_id: p.filiere_id,
+      niveau_id: '',
+      enseignant_id: p.enseignant_id ?? undefined,
+      filiere,
+      niveau: null,
+      enseignant,
+    }
+  })
+
   return {
     filieres: filieresEnriched,
     niveaux: niveaux ?? [],
-    matieres: matieres ?? [],
+    matieres,
     enseignants: enseignants ?? [],
     etudiants: etudiants ?? [],
     typeFormations,

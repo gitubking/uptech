@@ -38,8 +38,8 @@ type NiveauRow = {
 }
 type MatiereRow = {
   id: string; code: string; nom: string; coefficient: number; credit: number
-  semestre: number; volume_horaire?: number; filiere_id: string; niveau_id: string
-  enseignant_id?: string
+  semestre: number; volume_horaire?: number; filiere_id: string; niveau_id?: string
+  matiere_id?: string; enseignant_id?: string
   filiere: { id: string; nom: string; code: string } | null
   niveau: { id: string; nom: string } | null
   enseignant: { id: string; nom: string; prenom: string } | null
@@ -99,7 +99,7 @@ export function CoursesClient({ filieres, niveaux, matieres, enseignants, etudia
     if (type === 'matiere') {
       const m = data as MatiereRow
       setFormFiliereId(m.filiere_id)
-      setFormNiveauId(m.niveau_id)
+      setFormNiveauId(m.niveau_id ?? '')
       setFormEnseignantId(m.enseignant_id ?? '')
     } else if (type === 'niveau') {
       setFormFiliereId((data as NiveauRow).filiere_id)
@@ -203,7 +203,7 @@ export function CoursesClient({ filieres, niveaux, matieres, enseignants, etudia
         niveau: e.niveau,
         etudiants: [],
         matieres_count: matieres.filter(
-          (m) => m.filiere_id === e.filiere_id && m.niveau_id === e.niveau_id
+          (m) => m.filiere_id === e.filiere_id
         ).length,
       }
     }
@@ -678,12 +678,15 @@ export function CoursesClient({ filieres, niveaux, matieres, enseignants, etudia
                   <Input id="nom" name="nom" required placeholder="Algorithmique et Programmation"
                     defaultValue={dialog.mode === 'edit' ? dialog.data.nom : ''} />
                 </div>
+                {dialog.mode === 'edit' && (dialog.data as MatiereRow).matiere_id && (
+                  <input type="hidden" name="matiere_id" value={(dialog.data as MatiereRow).matiere_id} />
+                )}
                 <div className="space-y-1.5">
                   <Label>Filière *</Label>
                   <Select
                     name="filiere_id"
                     value={formFiliereId}
-                    onValueChange={(v) => { setFormFiliereId(v); setFormNiveauId('') }}
+                    onValueChange={(v) => { setFormFiliereId(v) }}
                     required
                   >
                     <SelectTrigger>
@@ -692,25 +695,6 @@ export function CoursesClient({ filieres, niveaux, matieres, enseignants, etudia
                     <SelectContent>
                       {filieres.map((f) => (
                         <SelectItem key={f.id} value={f.id}>{f.code} — {f.nom}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Niveau *</Label>
-                  <Select
-                    name="niveau_id"
-                    value={formNiveauId}
-                    onValueChange={setFormNiveauId}
-                    required
-                    disabled={!formFiliereId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={formFiliereId ? 'Choisir un niveau' : 'Sélectionnez d\'abord une filière'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredNiveaux.map((n) => (
-                        <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
