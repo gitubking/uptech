@@ -5,21 +5,36 @@ export default async function EmargerPage() {
   const supabase = await createClient()
 
   // Données pour le formulaire
-  const [{ data: enseignants }, { data: matieres }] = await Promise.all([
+  const [{ data: enseignants }, { data: programmes }] = await Promise.all([
     supabase
       .from('enseignants')
       .select('id, nom, prenom, matricule')
       .eq('actif', true)
       .order('nom'),
     supabase
-      .from('matieres')
+      .from('programme')
       .select(`
-        id, code, nom, enseignant_id, volume_horaire,
-        filiere:filieres(code, nom),
-        niveau:niveaux(nom)
+        id, volume_horaire, enseignant_id,
+        matiere:matieres(id, code, nom),
+        filiere:filieres(code, nom)
       `)
-      .order('code'),
+      .order('semestre'),
   ])
+
+  // Dédoublonner par matière pour le formulaire d'émargement
+  const seenM = new Set<string>()
+  const matieres = (programmes ?? []).filter((p) => {
+    const m = p.matiere as { id: string } | null
+    if (!m || seenM.has(m.id)) return false
+    seenM.add(m.id)
+    return true
+  }).map((p) => ({
+    ...(p.matiere as { id: string; code: string; nom: string }),
+    enseignant_id: p.enseignant_id,
+    volume_horaire: p.volume_horaire,
+    filiere: p.filiere as { code: string; nom: string } | null,
+    niveau: null,
+  }))
 
   // Historique des émargements (peut échouer si la table n'existe pas)
   let emargements: unknown[] = []
@@ -46,7 +61,7 @@ export default async function EmargerPage() {
   return (
     <EmargementClient
       enseignants={enseignants ?? []}
-      matieres={(matieres ?? []) as any}
+      matieres={matieres as any}
       emargements={emargements}
       tableError={tableError}
     />
