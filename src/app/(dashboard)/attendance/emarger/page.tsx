@@ -32,7 +32,7 @@ export default async function EmargerPage() {
     ...(p.matiere as unknown as { id: string; code: string; nom: string }),
     enseignant_id: p.enseignant_id,
     volume_horaire: p.volume_horaire,
-    filiere: p.filiere as { code: string; nom: string } | null,
+    filiere: p.filiere as unknown as { code: string; nom: string } | null,
     niveau: null,
   }))
 
