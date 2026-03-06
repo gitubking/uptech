@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
   ClipboardList, CalendarCheck, CreditCard, MessageSquare,
-  BarChart2, Settings, LogOut, ChevronLeft, ChevronRight
+  BarChart2, Settings, LogOut, ChevronLeft, ChevronRight, School
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import Image from 'next/image'
 const NAV_ITEMS = [
   { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, roles: ['all'] },
   { label: 'Étudiants', href: '/students', icon: Users, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'] },
+  { label: 'Classes', href: '/classes', icon: School, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'] },
   { label: 'Enseignants', href: '/teachers', icon: GraduationCap, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'] },
   { label: 'Formations', href: '/courses', icon: BookOpen, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant'] },
   { label: 'Notes & Résultats', href: '/grades', icon: ClipboardList, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant', 'etudiant'] },
