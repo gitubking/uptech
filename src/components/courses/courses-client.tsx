@@ -139,7 +139,12 @@ export function CoursesClient({ filieres, niveaux, matieres, enseignants, etudia
       raw.semestre = Number(raw.semestre) || 1
       if (raw.volume_horaire) raw.volume_horaire = Number(raw.volume_horaire)
       else delete raw.volume_horaire
-      if (!raw.enseignant_id || raw.enseignant_id === 'none') delete raw.enseignant_id
+      // Radix Select ne soumet pas via FormData — utiliser l'état contrôlé
+      if (formEnseignantId && formEnseignantId !== 'none') {
+        raw.enseignant_id = formEnseignantId
+      } else {
+        delete raw.enseignant_id
+      }
     }
 
     const isEdit = dialog.mode === 'edit'
