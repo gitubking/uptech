@@ -36,62 +36,26 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-    // 1. Créer le compte Auth directement confirmé (évite les OTP invite qui expirent)
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://uptech-taupe.vercel.app'
+    // Créer le compte Auth avec le mot de passe défini par l'admin
+    const password = (formData.get('password') as string) ?? ''
+    if (!password || password.length < 8) {
+      return NextResponse.json({ error: 'Mot de passe invalide (minimum 8 caractères)' }, { status: 400 })
+    }
+
     const { data: authUser, error: createError } = await db.auth.admin.createUser({
       email: data.email,
+      password,
       email_confirm: true,
       user_metadata: { role: 'enseignant', nom: data.nom, prenom: data.prenom },
     })
 
     if (createError) {
-      console.error('Create user error:', createError.message)
-      return NextResponse.json({ success: true, id: teacher.id, inviteError: createError.message })
+      return NextResponse.json({ error: createError.message }, { status: 400 })
     }
 
     if (authUser?.user) {
-      // Le trigger on_auth_user_created crée le profil avec nom/prénom/role depuis user_metadata
+      // Le trigger on_auth_user_created crée le profil depuis user_metadata
       await db.from('enseignants').update({ user_id: authUser.user.id }).eq('id', teacher.id)
-
-      // 2. Générer un magic link (approprié pour les nouveaux comptes sans mot de passe)
-      const { data: linkData, error: linkError } = await db.auth.admin.generateLink({
-        type: 'magiclink',
-        email: data.email,
-        options: { redirectTo: `${siteUrl}/update-password` },
-      })
-
-      if (linkError) console.error('generateLink error:', linkError.message)
-
-      const actionLink = linkData?.properties?.action_link
-      if (actionLink) {
-        const mailer = new Resend(process.env.RESEND_API_KEY)
-        await mailer.emails.send({
-          from: 'UPTECH <onboarding@resend.dev>',
-          to: data.email,
-          subject: "Votre accès à la plateforme UP'TECH",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-              <h2 style="color: #111;">Bonjour ${data.prenom} ${data.nom},</h2>
-              <p style="color: #444; line-height: 1.6;">
-                Votre compte enseignant sur la plateforme <strong>UP'TECH</strong> a été créé.
-                Cliquez sur le bouton ci-dessous pour définir votre mot de passe et accéder à votre espace.
-              </p>
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${actionLink}"
-                  style="background-color: #CC1F1F; color: white; padding: 14px 28px;
-                         border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
-                  Accéder à mon espace
-                </a>
-              </div>
-              <p style="color: #888; font-size: 13px;">
-                Ce lien est valable 24 heures.
-              </p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-              <p style="color: #aaa; font-size: 12px; text-align: center;">© 2025 UP'TECH — Institut Supérieur de Formation</p>
-            </div>
-          `,
-        })
-      }
     }
 
     return NextResponse.json({ success: true, id: teacher.id })

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { AlertCircle, User, Phone, Briefcase } from 'lucide-react'
+import { AlertCircle, User, Phone, Briefcase, KeyRound } from 'lucide-react'
 
 interface Props {
   defaultValues?: Record<string, string>
@@ -27,6 +27,18 @@ export function TeacherForm({ defaultValues, teacherId }: Props) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+
+    // Validation mot de passe à la création
+    if (!teacherId) {
+      const formData = new FormData(e.currentTarget)
+      const pwd = formData.get('password') as string
+      const pwdConfirm = formData.get('password_confirm') as string
+      if (pwd !== pwdConfirm) {
+        setError('Les mots de passe ne correspondent pas.')
+        return
+      }
+    }
+
     setIsPending(true)
     try {
       const formData = new FormData(e.currentTarget)
@@ -145,6 +157,45 @@ export function TeacherForm({ defaultValues, teacherId }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mot de passe — uniquement à la création */}
+      {!teacherId && (
+        <Card className="border border-gray-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-red-600" />
+              Accès à la plateforme
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Mot de passe <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="password" name="password" type="password"
+                  placeholder="Minimum 8 caractères"
+                  required minLength={8} className="h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password_confirm" className="text-sm font-medium text-gray-700">
+                  Confirmer le mot de passe <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="password_confirm" name="password_confirm" type="password"
+                  placeholder="Répétez le mot de passe"
+                  required minLength={8} className="h-10"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">
+              Communiquez ce mot de passe à l&apos;enseignant. Il pourra le modifier depuis son espace.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Contrat */}
       <Card className="border border-gray-100 shadow-sm">
