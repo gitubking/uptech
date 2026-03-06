@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { TeacherActions } from '@/components/teachers/teacher-actions'
-import { AssignProgrammeDialog } from '@/components/teachers/assign-programme-dialog'
 import { createClient } from '@/lib/supabase/server'
+import { getClassesEnseignant } from '@/app/actions/enseignement'
 import {
   ArrowLeft, Pencil, User, Phone,
-  Mail, Calendar, Briefcase, BookOpen, GraduationCap
+  Mail, Calendar, Briefcase, BookOpen, GraduationCap, School
 } from 'lucide-react'
 
 interface PageProps {
@@ -30,11 +30,7 @@ export default async function TeacherDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const supabase = await createClient()
-  const [{ data: filieres }, { data: annees }] = await Promise.all([
-    supabase.from('filieres').select('id, nom, code, type_formation').eq('actif', true).order('nom'),
-    supabase.from('annees_academiques').select('id, libelle, actif').order('libelle', { ascending: false }),
-  ])
+  const classesEnseignant = await getClassesEnseignant(id)
 
   const initials = `${teacher.prenom[0]}${teacher.nom[0]}`.toUpperCase()
   const contrat = CONTRAT_CONFIG[teacher.type_contrat] ?? { label: teacher.type_contrat, color: 'bg-gray-100 text-gray-700' }
@@ -162,47 +158,45 @@ export default async function TeacherDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
-          {/* Matières enseignées */}
+          {/* Classes & Modules */}
           <Card className="border border-gray-100 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-green-600" />
-                Matières enseignées
+                <School className="h-4 w-4 text-green-600" />
+                Classes &amp; Modules
                 <span className="text-xs font-normal text-gray-400">
-                  ({programme.length})
+                  ({classesEnseignant.length} intervention{classesEnseignant.length > 1 ? 's' : ''})
                 </span>
-                <div className="ml-auto">
-                  <AssignProgrammeDialog
-                    enseignantId={id}
-                    enseignantNom={`${teacher.nom} ${teacher.prenom}`}
-                    filieres={(filieres ?? []) as { id: string; nom: string; code: string; type_formation: string }[]}
-                    annees={(annees ?? []) as { id: string; libelle: string; actif: boolean }[]}
-                  />
-                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {programme.length === 0 ? (
+              {classesEnseignant.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">
-                  Aucune matière assignée pour l&apos;instant
+                  Aucune classe assignée — affectez cet enseignant depuis la fiche d&apos;une classe
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {programme.map((p) => (
-                    <div key={p.id}
-                      className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{p.matiere?.nom}</p>
-                        <p className="text-xs text-gray-400">
-                          {p.filiere?.code ?? ''} · S{p.semestre}
-                        </p>
+                  {classesEnseignant.map((e) => {
+                    const cls = e.classe as unknown as { id: string; nom: string; code: string; statut: string; filiere: { nom: string; code: string } | null } | null
+                    const prog = e.programme as unknown as { id: string; semestre: string; coefficient: number; matiere: { nom: string; code: string } | null } | null
+                    return (
+                      <div key={e.id}
+                        className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{prog?.matiere?.nom ?? '—'}</p>
+                          <p className="text-xs text-gray-400">
+                            {cls?.nom ?? '—'} · S{prog?.semestre} · Coeff. {prog?.coefficient}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs text-gray-500">
+                          {e.volume_horaire > 0 && <p>{e.volume_horaire}h</p>}
+                          <Link href={`/classes/${cls?.id}`} className="text-blue-500 hover:underline">
+                            Voir →
+                          </Link>
+                        </div>
                       </div>
-                      <div className="text-right text-xs text-gray-500">
-                        <p>Coeff. {p.coefficient}</p>
-                        {p.volume_horaire > 0 && <p>{p.volume_horaire}h</p>}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

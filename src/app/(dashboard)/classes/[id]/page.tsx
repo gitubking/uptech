@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge'
 import { getClasseById, getEtudiantsParFiliere } from '@/app/actions/classes'
 import { ClasseActions } from '@/components/classes/classe-actions'
 import { AffectationDialog } from '@/components/classes/affectation-dialog'
+import { ProgrammeClasseManager } from '@/components/classes/programme-classe-manager'
+import { getEnseignementsClasse } from '@/app/actions/enseignement'
+import { createClient } from '@/lib/supabase/server'
 
 const STATUT_CONFIG: Record<string, { label: string; class: string }> = {
   en_preparation: { label: 'En préparation', class: 'bg-amber-100 text-amber-700 border-amber-200' },
@@ -42,10 +45,13 @@ export default async function ClasseDetailPage({ params }: Props) {
   const annee = classe.annee_academique as { libelle: string } | null
   const etudiants = (classe.etudiants ?? []) as { id: string; matricule: string; nom: string; prenom: string; statut: string }[]
 
-  // Tous les étudiants de la même filière pour le dialog d'affectation
-  const tousEtudiantsFiliere = filiere?.id
-    ? await getEtudiantsParFiliere(filiere.id)
-    : []
+  // Paralléliser les fetches
+  const [tousEtudiantsFiliere, enseignements, enseignantsData] = await Promise.all([
+    filiere?.id ? getEtudiantsParFiliere(filiere.id) : Promise.resolve([]),
+    getEnseignementsClasse(id),
+    createClient().then(s => s.from('enseignants').select('id, nom, prenom').eq('actif', true).order('nom')),
+  ])
+  const enseignants = (enseignantsData.data ?? []) as { id: string; nom: string; prenom: string }[]
   const statut = STATUT_CONFIG[classe.statut] ?? STATUT_CONFIG['en_preparation']
   const rentree = new Date(classe.date_rentree).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 
@@ -172,6 +178,15 @@ export default async function ClasseDetailPage({ params }: Props) {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* Programme de la classe */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <ProgrammeClasseManager
+          classeId={id}
+          enseignements={enseignements as unknown as Parameters<typeof ProgrammeClasseManager>[0]['enseignements']}
+          enseignants={enseignants}
+        />
       </div>
     </div>
   )
