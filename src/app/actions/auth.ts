@@ -15,13 +15,22 @@ export async function login(
     password: formData.get('password') as string,
   }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { data: authData, error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
     return { error: 'Email ou mot de passe incorrect.' }
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('user_id', authData.user.id)
+    .single()
+
   revalidatePath('/', 'layout')
+  if (profile?.role === 'enseignant') {
+    redirect('/enseignant/dashboard')
+  }
   redirect('/dashboard')
 }
 
