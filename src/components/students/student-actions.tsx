@@ -100,12 +100,15 @@ export function StudentActions({ studentId, statut, anneeAcademiqueId, tarif }: 
 
       // 2. Versement scolarité — redistribué en mensualités individuelles
       if (versementType !== 'none' && tarif && tarif.mensualite > 0) {
-        let restant = parseFloat(montantVersement) || 0
-        while (restant > 0) {
+        const totalAutorise = tarif.mensualite * tarif.nb_mensualites
+        let restant = Math.min(parseFloat(montantVersement) || 0, totalAutorise)
+        let iterations = 0
+        while (restant > 0 && iterations < tarif.nb_mensualites) {
           const tranche = Math.min(restant, tarif.mensualite)
           const d = await postPaiement('scolarite', tranche, tarif.mensualite, modeVersement)
           if (d.error) { setError(d.error); return }
           restant = Math.round((restant - tranche) * 100) / 100
+          iterations++
           if (tranche < tarif.mensualite) break // paiement partiel → arrêter
         }
       }

@@ -101,6 +101,10 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
     ? type === 'inscription' ? tarif.frais_inscription : tarif.mensualite
     : null
 
+  // Solde restant scolarité — calculé côté client via l'API (approximatif, la vraie protection est server-side)
+  // Pour l'UI on se base sur le tarif uniquement ; le vrai blocage est API-level
+  const totalScolariteAutorise = tarif ? tarif.mensualite * tarif.nb_mensualites : null
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
@@ -297,6 +301,11 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
                 required
                 className="h-10"
               />
+              {type === 'scolarite' && totalScolariteAutorise !== null && (
+                <p className="text-xs text-amber-600">
+                  Max scolarité : {formatMoney(totalScolariteAutorise)} ({tarif!.nb_mensualites} × {formatMoney(tarif!.mensualite)})
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-1.5">

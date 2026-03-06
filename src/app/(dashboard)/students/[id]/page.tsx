@@ -83,7 +83,8 @@ export default async function StudentDetailPage({ params }: PageProps) {
   // Finance summary
   const totalPaye = paiementsList.reduce((s, p) => p.statut === 'paye' || p.statut === 'partiel' ? s + Number(p.montant) : s, 0)
   const totalAttente = paiementsList.reduce((s, p) => p.statut === 'en_attente' ? s + Number(p.montant_total) : s, 0)
-  const totalTarif = tarif ? Number(tarif.mensualite) * tarif.nb_mensualites : null
+  const totalScolariteTarif = tarif ? Number(tarif.mensualite) * tarif.nb_mensualites : null
+  const totalTarif = tarif ? Number(tarif.frais_inscription) + Number(tarif.mensualite) * tarif.nb_mensualites : null
   const soldeDu = totalTarif !== null ? Math.max(0, totalTarif - totalPaye) : totalAttente > 0 ? totalAttente : null
 
   // Numérotation des mensualités (ordre chronologique)

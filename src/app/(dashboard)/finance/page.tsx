@@ -194,11 +194,15 @@ export default async function FinancePage({ searchParams }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {paiements.map((p) => {
-                const etudiant = p.etudiant as { nom: string; prenom: string; matricule: string } | null
+                const etudiant = p.etudiant as { nom: string; prenom: string; matricule: string; filiere?: { nom: string; code: string } | null; niveau?: { nom: string } | null } | null
+                const anneeAcademique = p.annee_academique as { libelle: string } | null
                 const statut = STATUT_CONFIG[p.statut] ?? { label: p.statut, class: 'bg-gray-100 text-gray-600' }
                 const date = p.date_paiement
                   ? new Date(p.date_paiement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
                   : new Date(p.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+                const typeLabel = p.type === 'scolarite'
+                  ? mensualiteLabel(mensualiteMap.get(p.id) ?? 1)
+                  : (TYPE_LABELS[p.type] ?? p.type)
 
                 return (
                   <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
@@ -209,11 +213,7 @@ export default async function FinancePage({ searchParams }: Props) {
                       <p className="font-medium text-gray-900">{etudiant?.nom} {etudiant?.prenom}</p>
                       <p className="text-xs text-gray-400">{etudiant?.matricule}</p>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {p.type === 'scolarite'
-                        ? mensualiteLabel(mensualiteMap.get(p.id) ?? 1)
-                        : (TYPE_LABELS[p.type] ?? p.type)}
-                    </td>
+                    <td className="py-3 px-4 text-gray-600">{typeLabel}</td>
                     <td className="py-3 px-4">
                       <p className="font-semibold text-gray-900">{formatMoney(Number(p.montant))}</p>
                       {Number(p.montant) < Number(p.montant_total) && (
@@ -227,7 +227,27 @@ export default async function FinancePage({ searchParams }: Props) {
                     </td>
                     <td className="py-3 px-4 text-gray-500 text-xs">{date}</td>
                     <td className="py-3 px-4 text-right">
-                      <PaiementActions paiementId={p.id} statut={p.statut} />
+                      <PaiementActions
+                        paiementId={p.id}
+                        statut={p.statut}
+                        receipt={{
+                          reference: p.reference,
+                          date,
+                          etudiant: {
+                            nom: etudiant?.nom ?? '',
+                            prenom: etudiant?.prenom ?? '',
+                            matricule: etudiant?.matricule ?? '',
+                            filiere: etudiant?.filiere ? `${etudiant.filiere.code} — ${etudiant.filiere.nom}` : null,
+                            niveau: etudiant?.niveau?.nom ?? null,
+                          },
+                          typeLabel,
+                          montant: Number(p.montant),
+                          montant_total: Number(p.montant_total),
+                          statut: p.statut,
+                          mode_paiement: p.mode_paiement ?? 'especes',
+                          anneeLibelle: anneeAcademique?.libelle ?? null,
+                        }}
+                      />
                     </td>
                   </tr>
                 )

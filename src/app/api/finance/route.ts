@@ -41,6 +41,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Pour la scolarité : bloquer le dépassement du total
+    if (type === 'scolarite') {
+      // Récupérer la filière de l'étudiant
+      const { data: etudiant } = await db
+        .from('etudiants')
+        .select('filiere_id')
+        .eq('id', etudiant_id)
+        .single()
+
+      if (etudiant?.filiere_id) {
+        // Récupérer le tarif
+        const { data: tarif } = await db
+          .from('tarifs')
+          .select('mensualite, nb_mensualites')
+          .eq('filiere_id', etudiant.filiere_id)
+          .eq('annee_academique_id', annee_academique_id)
+          .maybeSingle()
+
+        if (tarif) {
+          const totalAutorise = Number(tarif.mensualite) * tarif.nb_mensualites
+
+          // Somme déjà payée en scolarité
+          const { data: paiementsExistants } = await db
+            .from('paiements')
+            .select('montant')
+            .eq('etudiant_id', etudiant_id)
+            .eq('annee_academique_id', annee_academique_id)
+            .eq('type', 'scolarite')
+
+          const totalDejaVerse = (paiementsExistants ?? []).reduce((s, p) => s + Number(p.montant), 0)
+
+          if (totalDejaVerse + montant > totalAutorise) {
+            const restant = Math.max(0, totalAutorise - totalDejaVerse)
+            return NextResponse.json({
+              error: `Dépassement du total de scolarité autorisé. Montant restant à payer : ${new Intl.NumberFormat('fr-SN').format(restant)} FCFA (total autorisé : ${new Intl.NumberFormat('fr-SN').format(totalAutorise)} FCFA).`,
+            }, { status: 400 })
+          }
+        }
+      }
+    }
+
     // Determine statut based on amounts
     let statut = 'en_attente'
     if (montant >= montant_total) {

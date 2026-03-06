@@ -3,16 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Trash2, CheckCircle } from 'lucide-react'
+import { Trash2, CheckCircle, FileText } from 'lucide-react'
+import { ReceiptDialog, type ReceiptData } from './receipt-dialog'
 
 interface Props {
   paiementId: string
   statut: string
+  receipt: ReceiptData
 }
 
-export function PaiementActions({ paiementId, statut }: Props) {
+export function PaiementActions({ paiementId, statut, receipt }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState<'delete' | 'pay' | null>(null)
+  const [receiptOpen, setReceiptOpen] = useState(false)
 
   async function handleDelete() {
     if (!confirm('Supprimer ce paiement définitivement ?')) return
@@ -40,29 +43,46 @@ export function PaiementActions({ paiementId, statut }: Props) {
   }
 
   return (
-    <div className="flex gap-2">
-      {statut !== 'paye' && (
+    <>
+      <div className="flex gap-2 justify-end">
         <Button
           variant="outline"
           size="sm"
-          onClick={handleMarkPaid}
-          disabled={loading !== null}
-          className="gap-1.5 text-green-700 border-green-200 hover:bg-green-50"
+          onClick={() => setReceiptOpen(true)}
+          className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
         >
-          <CheckCircle className="h-3.5 w-3.5" />
-          {loading === 'pay' ? 'En cours…' : 'Marquer payé'}
+          <FileText className="h-3.5 w-3.5" />
+          Reçu
         </Button>
-      )}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleDelete}
-        disabled={loading !== null}
-        className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-        {loading === 'delete' ? 'Suppression…' : 'Supprimer'}
-      </Button>
-    </div>
+        {statut !== 'paye' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMarkPaid}
+            disabled={loading !== null}
+            className="gap-1.5 text-green-700 border-green-200 hover:bg-green-50"
+          >
+            <CheckCircle className="h-3.5 w-3.5" />
+            {loading === 'pay' ? 'En cours…' : 'Marquer payé'}
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDelete}
+          disabled={loading !== null}
+          className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          {loading === 'delete' ? 'Suppression…' : 'Supprimer'}
+        </Button>
+      </div>
+
+      <ReceiptDialog
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        data={receipt}
+      />
+    </>
   )
 }
