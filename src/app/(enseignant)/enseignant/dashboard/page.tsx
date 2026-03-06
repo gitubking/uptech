@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import {
   getEnseignantConnecte,
   getDashboardStats,
@@ -39,8 +38,19 @@ function BannerCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function EnseignantDashboardPage() {
-  const { enseignant } = await getEnseignantConnecte()
-  if (!enseignant) redirect('/login?error=profil_introuvable')
+  const { profile, enseignant } = await getEnseignantConnecte()
+
+  if (!enseignant) {
+    return (
+      <div className="bg-red-50 border border-red-300 rounded-lg p-4 text-sm font-mono text-red-900 space-y-2">
+        <p className="font-bold">❌ Enseignant introuvable</p>
+        <p><b>profile.user_id:</b> {profile?.user_id ?? 'null'}</p>
+        <p><b>profile.role:</b> {profile?.role ?? 'null'}</p>
+        <p><b>profile.email:</b> {profile?.email ?? 'null'}</p>
+        <p className="mt-2 text-xs text-gray-500">Vérifiez que cet email existe dans la table enseignants</p>
+      </div>
+    )
+  }
 
   const [stats, allCours] = await Promise.all([
     getDashboardStats(enseignant.id),
