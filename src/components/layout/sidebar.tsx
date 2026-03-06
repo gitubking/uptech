@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { label: 'Classes', href: '/classes', icon: School, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'] },
   { label: 'Enseignants', href: '/teachers', icon: GraduationCap, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'secretaire'] },
   { label: 'Formations', href: '/courses', icon: BookOpen, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant'] },
+  { label: 'Matières', href: '/matieres', icon: School, roles: ['super_admin', 'directeur', 'responsable_pedagogique'] },
   { label: 'Notes & Résultats', href: '/grades', icon: ClipboardList, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant', 'etudiant'] },
   { label: 'Présences', href: '/attendance', icon: CalendarCheck, roles: ['super_admin', 'directeur', 'responsable_pedagogique', 'enseignant', 'etudiant'] },
   { label: 'Finance', href: '/finance', icon: CreditCard, roles: ['super_admin', 'directeur', 'agent_comptable'] },
