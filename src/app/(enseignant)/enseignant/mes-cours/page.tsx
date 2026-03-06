@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { getEnseignantConnecte, getCoursEnseignant, getAnneesAcademiques } from '@/app/actions/enseignant'
 import { CoursTable } from '@/components/enseignant/cours-table'
 import { AnneeScolaireFilter } from '@/components/enseignant/annee-scolaire-filter'
@@ -25,10 +26,12 @@ export default async function MesCoursPage({ searchParams }: PageProps) {
 
       {/* Filtre année scolaire */}
       <div className="flex justify-end">
-        <AnneeScolaireFilter
-          annees={annees}
-          selected={anneeSelectionnee}
-        />
+        <Suspense fallback={null}>
+          <AnneeScolaireFilter
+            annees={annees}
+            selected={anneeSelectionnee}
+          />
+        </Suspense>
       </div>
 
       {/* Tableau des cours */}
