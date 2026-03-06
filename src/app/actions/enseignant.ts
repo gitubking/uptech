@@ -119,9 +119,9 @@ export async function getCoursEnseignant(
   const rows: CoursRow[] = []
 
   for (const prog of programmes) {
-    const mat   = prog.matiere as { id: string; nom: string } | null
-    const fil   = prog.filiere as { id: string; code: string; type_formation_id?: string | null } | null
-    const annee = prog.annee_academique as { id: string; libelle: string } | null
+    const mat   = prog.matiere as unknown as { id: string; nom: string } | null
+    const fil   = prog.filiere as unknown as { id: string; code: string; type_formation_id?: string | null } | null
+    const annee = prog.annee_academique as unknown as { id: string; libelle: string } | null
     const tarif = fil?.type_formation_id ? (tarifMap[fil.type_formation_id] ?? 0) : 0
     const heuresFaites = heuresMap[prog.matiere_id] ?? 0
 
@@ -213,7 +213,7 @@ export async function getDashboardStats(enseignant_id: string) {
   // Revenus calculés = Σ(heures_émargées_par_matière × tarif_filière)
   let revenus = 0
   for (const prog of programmes ?? []) {
-    const fil   = prog.filiere as { type_formation_id?: string | null } | null
+    const fil   = prog.filiere as unknown as { type_formation_id?: string | null } | null
     const tarif = fil?.type_formation_id ? (tarifMap[fil.type_formation_id] ?? 0) : 0
     const h     = heuresMap[prog.matiere_id] ?? 0
     revenus    += h * tarif
