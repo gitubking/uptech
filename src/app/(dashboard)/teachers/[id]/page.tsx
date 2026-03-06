@@ -31,11 +31,11 @@ export default async function TeacherDetailPage({ params }: PageProps) {
   const initials = `${teacher.prenom[0]}${teacher.nom[0]}`.toUpperCase()
   const contrat = CONTRAT_CONFIG[teacher.type_contrat] ?? { label: teacher.type_contrat, color: 'bg-gray-100 text-gray-700' }
 
-  const matieres = (teacher.matieres ?? []) as Array<{
-    id: string; nom: string; code: string
-    coefficient: number; semestre: string; volume_horaire: number
+  const programme = (teacher.programme ?? []) as Array<{
+    id: string; semestre: string; coefficient: number; volume_horaire: number
+    matiere: { id: string; nom: string; code: string } | null
     filiere: { nom: string; code: string } | null
-    niveau: { nom: string } | null
+    annee_academique: { libelle: string } | null
   }>
 
   return (
@@ -161,29 +161,29 @@ export default async function TeacherDetailPage({ params }: PageProps) {
                 <BookOpen className="h-4 w-4 text-green-600" />
                 Matières enseignées
                 <span className="ml-auto text-xs font-normal text-gray-400">
-                  {matieres.length} matière{matieres.length > 1 ? 's' : ''}
+                  {programme.length} matière{programme.length > 1 ? 's' : ''}
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {matieres.length === 0 ? (
+              {programme.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">
                   Aucune matière assignée pour l&apos;instant
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {matieres.map((m) => (
-                    <div key={m.id}
+                  {programme.map((p) => (
+                    <div key={p.id}
                       className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium text-gray-800">{m.nom}</p>
+                        <p className="text-sm font-medium text-gray-800">{p.matiere?.nom}</p>
                         <p className="text-xs text-gray-400">
-                          {m.filiere?.code ?? ''} · {m.niveau?.nom ?? ''} · S{m.semestre}
+                          {p.filiere?.code ?? ''} · S{p.semestre}
                         </p>
                       </div>
                       <div className="text-right text-xs text-gray-500">
-                        <p>Coeff. {m.coefficient}</p>
-                        {m.volume_horaire > 0 && <p>{m.volume_horaire}h</p>}
+                        <p>Coeff. {p.coefficient}</p>
+                        {p.volume_horaire > 0 && <p>{p.volume_horaire}h</p>}
                       </div>
                     </div>
                   ))}

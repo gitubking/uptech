@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
 
 interface PageProps {
-  searchParams: Promise<{ matiere_id?: string; annee_id?: string }>
+  searchParams: Promise<{ programme_id?: string; annee_id?: string }>
 }
 
 export default async function SaisirPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const { matiere_id, annee_id } = params
+  const { programme_id, annee_id } = params
 
-  if (!matiere_id || !annee_id) {
+  if (!programme_id || !annee_id) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -28,7 +28,7 @@ export default async function SaisirPage({ searchParams }: PageProps) {
           <div>
             <p className="font-semibold">Paramètres manquants</p>
             <p className="text-sm mt-0.5">
-              Les paramètres <code className="font-mono">matiere_id</code> et{' '}
+              Les paramètres <code className="font-mono">programme_id</code> et{' '}
               <code className="font-mono">annee_id</code> sont requis pour saisir les notes.
             </p>
           </div>
@@ -37,7 +37,7 @@ export default async function SaisirPage({ searchParams }: PageProps) {
     )
   }
 
-  const { matiere, students } = await getStudentsWithNotes(matiere_id, annee_id)
+  const { matiere, students } = await getStudentsWithNotes(programme_id, annee_id)
 
   if (!matiere) {
     return (

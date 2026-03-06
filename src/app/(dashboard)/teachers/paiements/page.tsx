@@ -11,7 +11,7 @@ export default async function PaiementsEnseignantsPage() {
     .select(`
       id, enseignant_id, matiere_id, date_cours, heure_debut, heure_fin,
       enseignant:enseignants(id, nom, prenom, matricule),
-      matiere:matieres(id, code, nom, filiere_id)
+      matiere:matieres(id, code, nom)
     `)
     .order('date_cours', { ascending: false })
 

@@ -130,7 +130,7 @@ export default async function GradesPage({ searchParams }: PageProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/grades/saisir?matiere_id=${matiere.id}&annee_id=${annee?.id ?? ''}`}>
+                      <Link href={`/grades/saisir?programme_id=${matiere.id}&annee_id=${annee?.id ?? ''}`}>
                         <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 gap-1">
                           <PenLine className="h-3.5 w-3.5" />
                           Saisir notes

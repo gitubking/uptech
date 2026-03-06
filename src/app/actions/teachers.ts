@@ -16,7 +16,7 @@ export async function getTeachers(filters?: {
     .from('enseignants')
     .select(`
       *,
-      matieres:matieres(id, nom, code)
+      programme(id, semestre, matiere:matieres(id, nom, code), filiere:filieres(id, nom, code))
     `)
     .order('nom', { ascending: true })
 
@@ -42,9 +42,10 @@ export async function getTeacherById(id: string) {
     .from('enseignants')
     .select(`
       *,
-      matieres:matieres(id, nom, code, filiere_id, niveau_id, coefficient, semestre, volume_horaire,
+      programme(id, semestre, coefficient, credit, volume_horaire,
+        matiere:matieres(id, nom, code),
         filiere:filieres(id, nom, code),
-        niveau:niveaux(id, nom)
+        annee_academique:annees_academiques(id, libelle)
       )
     `)
     .eq('id', id)

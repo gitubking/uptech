@@ -2,55 +2,64 @@
 
 import { createClient } from '@/lib/supabase/server'
 
-// ─── Recuperer toutes les matieres avec filtres ──────────────────────────────
+// ─── Recuperer les programme (matières par filière) avec filtres ──────────────
 export async function getMatieres(filters?: {
   filiere_id?: string
-  niveau_id?: string
+  niveau_id?: string // gardé pour compatibilité URL, ignoré côté DB
   semestre?: string
   annee_id?: string
 }) {
   const supabase = await createClient()
 
   let query = supabase
-    .from('matieres')
+    .from('programme')
     .select(`
-      *,
+      id, semestre, coefficient, credit, volume_horaire,
+      matiere:matieres(id, nom, code),
       filiere:filieres(id, nom, code),
-      niveau:niveaux(id, nom, ordre),
       enseignant:enseignants(id, nom, prenom)
     `)
-    .order('created_at', { ascending: false })
+    .order('semestre', { ascending: true })
 
   if (filters?.filiere_id) query = query.eq('filiere_id', filters.filiere_id)
-  if (filters?.niveau_id) query = query.eq('niveau_id', filters.niveau_id)
   if (filters?.semestre) query = query.eq('semestre', filters.semestre)
+  if (filters?.annee_id) query = query.eq('annee_academique_id', filters.annee_id)
 
-  const { data: matieres, error } = await query
+  const { data: programmes, error } = await query
   if (error) throw error
-  if (!matieres || matieres.length === 0) return []
-
-  const annee_id = filters?.annee_id
+  if (!programmes || programmes.length === 0) return []
 
   const enriched = await Promise.all(
-    matieres.map(async (matiere) => {
+    programmes.map(async (prog) => {
+      const matiere = prog.matiere as { id: string; nom: string; code: string } | null
+      const filiere = prog.filiere as { id: string; nom: string; code: string } | null
+
       const { count: totalStudents } = await supabase
         .from('etudiants')
         .select('*', { count: 'exact', head: true })
-        .eq('filiere_id', matiere.filiere_id)
-        .eq('niveau_id', matiere.niveau_id)
+        .eq('filiere_id', filiere?.id ?? '')
         .eq('statut', 'inscrit')
 
       let notesQuery = supabase
         .from('notes')
         .select('*', { count: 'exact', head: true })
-        .eq('matiere_id', matiere.id)
+        .eq('matiere_id', matiere?.id ?? '')
 
-      if (annee_id) notesQuery = notesQuery.eq('annee_academique_id', annee_id)
+      if (filters?.annee_id) notesQuery = notesQuery.eq('annee_academique_id', filters.annee_id)
 
       const { count: notesCount } = await notesQuery
 
       return {
-        ...matiere,
+        id: prog.id, // programme ID — utilisé dans le lien saisie
+        nom: matiere?.nom ?? '',
+        code: matiere?.code ?? '',
+        semestre: prog.semestre,
+        coefficient: prog.coefficient,
+        credit: prog.credit,
+        volume_horaire: prog.volume_horaire,
+        filiere,
+        niveau: null,
+        enseignant: prog.enseignant,
         total_etudiants: totalStudents ?? 0,
         notes_saisies: notesCount ?? 0,
       }
@@ -60,42 +69,52 @@ export async function getMatieres(filters?: {
   return enriched
 }
 
-// ─── Recuperer les etudiants d'une matiere avec leurs notes ──────────────────
-export async function getStudentsWithNotes(matiere_id: string, annee_id: string) {
+// ─── Recuperer les etudiants d'un programme avec leurs notes ─────────────────
+export async function getStudentsWithNotes(programme_id: string, annee_id: string) {
   const supabase = await createClient()
 
-  const { data: matiere, error: matiereError } = await supabase
-    .from('matieres')
+  const { data: prog, error: progError } = await supabase
+    .from('programme')
     .select(`
-      *,
+      id, semestre, coefficient,
+      matiere:matieres(id, nom, code),
       filiere:filieres(id, nom, code),
-      niveau:niveaux(id, nom, ordre),
       enseignant:enseignants(id, nom, prenom)
     `)
-    .eq('id', matiere_id)
+    .eq('id', programme_id)
     .single()
 
-  if (matiereError) throw matiereError
-  if (!matiere) return { matiere: null, students: [] }
+  if (progError || !prog) return { matiere: null, students: [] }
+
+  const matiere = prog.matiere as { id: string; nom: string; code: string } | null
+  const filiere = prog.filiere as { id: string; nom: string; code: string } | null
 
   const { data: etudiants, error: studentsError } = await supabase
     .from('etudiants')
     .select('id, matricule, nom, prenom')
-    .eq('filiere_id', matiere.filiere_id)
-    .eq('niveau_id', matiere.niveau_id)
+    .eq('filiere_id', filiere?.id ?? '')
     .eq('statut', 'inscrit')
     .order('nom', { ascending: true })
 
   if (studentsError) throw studentsError
 
+  const matiereInfo = {
+    id: matiere?.id ?? '',
+    nom: matiere?.nom ?? '',
+    code: matiere?.code ?? '',
+    filiere,
+    niveau: null,
+    enseignant: prog.enseignant,
+  }
+
   if (!etudiants || etudiants.length === 0) {
-    return { matiere, students: [] }
+    return { matiere: matiereInfo, students: [] }
   }
 
   const { data: notes, error: notesError } = await supabase
     .from('notes')
     .select('id, etudiant_id, note_normale, note_rattrapage, note_finale, mention')
-    .eq('matiere_id', matiere_id)
+    .eq('matiere_id', matiere?.id ?? '')
     .eq('annee_academique_id', annee_id)
 
   if (notesError) throw notesError
@@ -114,7 +133,7 @@ export async function getStudentsWithNotes(matiere_id: string, annee_id: string)
     }
   })
 
-  return { matiere, students }
+  return { matiere: matiereInfo, students }
 }
 
 // ─── Recuperer le bulletin d'un etudiant ─────────────────────────────────────
@@ -124,7 +143,7 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
   const { data: etudiant, error: etudiantError } = await supabase
     .from('etudiants')
     .select(`
-      *,
+      id, matricule, nom, prenom, filiere_id,
       filiere:filieres(id, nom, code),
       niveau:niveaux(id, nom, ordre),
       annee_academique:annees_academiques(id, libelle)
@@ -143,36 +162,51 @@ export async function getBulletin(etudiant_id: string, annee_id: string) {
 
   if (anneeError) throw anneeError
 
-  const { data: matieres, error: matieresError } = await supabase
-    .from('matieres')
+  // Matières via programme pour la filière de l'étudiant
+  const { data: programmes, error: matieresError } = await supabase
+    .from('programme')
     .select(`
-      id, code, nom, coefficient, credit, semestre, volume_horaire,
+      id, semestre, coefficient, credit, volume_horaire,
+      matiere:matieres(id, nom, code),
       enseignant:enseignants(id, nom, prenom)
     `)
     .eq('filiere_id', etudiant.filiere_id)
-    .eq('niveau_id', etudiant.niveau_id)
+    .eq('annee_academique_id', annee_id)
     .order('semestre', { ascending: true })
 
   if (matieresError) throw matieresError
 
-  if (!matieres || matieres.length === 0) {
+  if (!programmes || programmes.length === 0) {
     return { etudiant, matieres: [], annee }
   }
+
+  const matiereIds = programmes
+    .map((p) => (p.matiere as { id: string } | null)?.id)
+    .filter(Boolean) as string[]
 
   const { data: notes, error: notesError } = await supabase
     .from('notes')
     .select('id, matiere_id, note_normale, note_rattrapage, note_finale, mention')
     .eq('etudiant_id', etudiant_id)
     .eq('annee_academique_id', annee_id)
+    .in('matiere_id', matiereIds)
 
   if (notesError) throw notesError
 
   const notesMap = new Map((notes ?? []).map((n) => [n.matiere_id, n]))
 
-  const matieresWithNotes = matieres.map((matiere) => {
-    const note = notesMap.get(matiere.id)
+  const matieresWithNotes = programmes.map((prog) => {
+    const matiere = prog.matiere as { id: string; nom: string; code: string } | null
+    const note = matiere ? notesMap.get(matiere.id) : null
     return {
-      ...matiere,
+      id: prog.id,
+      nom: matiere?.nom ?? '',
+      code: matiere?.code ?? '',
+      semestre: prog.semestre,
+      coefficient: prog.coefficient,
+      credit: prog.credit,
+      volume_horaire: prog.volume_horaire,
+      enseignant: prog.enseignant,
       note_id: note?.id ?? null,
       note_normale: note?.note_normale ?? null,
       note_rattrapage: note?.note_rattrapage ?? null,
@@ -196,7 +230,7 @@ export async function getActiveAnnee() {
   return data
 }
 
-// ─── Récupérer les étudiants d'une classe avec leur moyenne ──────────────────
+// ─── Récupérer les étudiants d'une filière avec leur moyenne ─────────────────
 export async function getEtudiantsClasse(filiere_id: string, niveau_id: string, annee_id: string) {
   const supabase = await createClient()
 
@@ -209,25 +243,29 @@ export async function getEtudiantsClasse(filiere_id: string, niveau_id: string, 
 
   if (error || !etudiants) return []
 
-  // Récupérer les notes de chaque étudiant
+  // Récupérer les coefficients depuis programme
+  const { data: programmes } = await supabase
+    .from('programme')
+    .select('matiere_id, coefficient')
+    .eq('filiere_id', filiere_id)
+    .eq('annee_academique_id', annee_id)
+
+  const coeffMap = new Map((programmes ?? []).map((p) => [p.matiere_id, Number(p.coefficient)]))
+
   const results = await Promise.all(
     etudiants.map(async (etudiant) => {
       const { data: notes } = await supabase
         .from('notes')
-        .select('note_finale, coefficient:matieres(coefficient)')
+        .select('note_finale, matiere_id')
         .eq('etudiant_id', etudiant.id)
         .eq('annee_academique_id', annee_id)
         .not('note_finale', 'is', null)
 
-      const notesData = (notes ?? []) as { note_finale: number; coefficient: { coefficient: number }[] | null }[]
-      const totalCoeff = notesData.reduce((s, n) => {
-        const coeff = Array.isArray(n.coefficient) ? (n.coefficient[0]?.coefficient ?? 1) : 1
-        return s + coeff
-      }, 0)
-      const somme = notesData.reduce((s, n) => {
-        const coeff = Array.isArray(n.coefficient) ? (n.coefficient[0]?.coefficient ?? 1) : 1
-        return s + n.note_finale * coeff
-      }, 0)
+      const notesData = (notes ?? []) as { note_finale: number; matiere_id: string }[]
+      const totalCoeff = notesData.reduce((s, n) => s + (coeffMap.get(n.matiere_id) ?? 1), 0)
+      const somme = notesData.reduce(
+        (s, n) => s + n.note_finale * (coeffMap.get(n.matiere_id) ?? 1), 0
+      )
       const moyenne = totalCoeff > 0 ? somme / totalCoeff : null
 
       return { ...etudiant, moyenne, nbMatieres: notesData.length }
