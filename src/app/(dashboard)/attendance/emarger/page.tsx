@@ -46,7 +46,7 @@ export default async function EmargerPage() {
       .select(`
         id, date_cours, heure_debut, heure_fin, chapitre, observations, created_at,
         enseignant:enseignants(id, nom, prenom),
-        matiere:matieres(id, code, nom, filiere:filieres(code), niveau:niveaux(nom))
+        matiere:matieres(id, code, nom)
       `)
       .order('date_cours', { ascending: false })
       .order('created_at', { ascending: false })
