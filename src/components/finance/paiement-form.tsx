@@ -261,25 +261,28 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>
-                Montant total dû (FCFA) <span className="text-red-500">*</span>
-                {suggestedMontant !== null && (
-                  <span className="ml-2 text-xs font-normal text-green-600">
-                    Suggéré : {formatMoney(suggestedMontant)}
-                  </span>
-                )}
-              </Label>
-              <Input
-                name="montant_total"
-                type="number"
-                min="0"
-                step="1"
-                placeholder={suggestedMontant !== null ? String(suggestedMontant) : 'ex: 150000'}
-                defaultValue={suggestedMontant !== null ? suggestedMontant : undefined}
-                key={`total-${etudiantId}-${type}`}
-                required
-                className="h-10"
-              />
+              <Label>Montant total dû (FCFA)</Label>
+              {suggestedMontant !== null ? (
+                <>
+                  <input type="hidden" name="montant_total" value={suggestedMontant} />
+                  <div className="h-10 px-3 flex items-center bg-gray-50 border border-gray-200 rounded-md text-sm font-semibold text-gray-800">
+                    {formatMoney(suggestedMontant)}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {type === 'inscription' ? 'Frais d\'inscription du tarif' : 'Montant d\'une mensualité'}
+                  </p>
+                </>
+              ) : (
+                <Input
+                  name="montant_total"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="ex: 150000"
+                  required
+                  className="h-10"
+                />
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Montant versé (FCFA) <span className="text-red-500">*</span></Label>
@@ -287,8 +290,10 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
                 name="montant"
                 type="number"
                 min="0"
+                max={suggestedMontant ?? undefined}
                 step="1"
                 placeholder={suggestedMontant !== null ? String(suggestedMontant) : 'ex: 75000'}
+                key={`montant-${etudiantId}-${type}`}
                 required
                 className="h-10"
               />

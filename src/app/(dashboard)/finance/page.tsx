@@ -29,6 +29,26 @@ const TYPE_LABELS: Record<string, string> = {
   autre:       'Autre',
 }
 
+function mensualiteLabel(n: number) {
+  return n === 1 ? '1ère mensualité' : `${n}ème mensualité`
+}
+
+function buildMensualiteMap(paiements: { id: string; type: string; etudiant_id: string; created_at: string }[]) {
+  // Grouper les scolarités par étudiant, ordonner chrono, numéroter
+  const byEtudiant: Record<string, typeof paiements> = {}
+  for (const p of paiements) {
+    if (p.type !== 'scolarite') continue
+    if (!byEtudiant[p.etudiant_id]) byEtudiant[p.etudiant_id] = []
+    byEtudiant[p.etudiant_id].push(p)
+  }
+  const map = new Map<string, number>()
+  for (const group of Object.values(byEtudiant)) {
+    group.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    group.forEach((p, i) => map.set(p.id, i + 1))
+  }
+  return map
+}
+
 function formatMoney(amount: number) {
   return new Intl.NumberFormat('fr-SN', { style: 'decimal' }).format(amount) + ' FCFA'
 }
@@ -39,6 +59,7 @@ export default async function FinancePage({ searchParams }: Props) {
     getPaiements(params),
     getFinanceStats(),
   ])
+  const mensualiteMap = buildMensualiteMap(paiements as { id: string; type: string; etudiant_id: string; created_at: string }[])
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -188,7 +209,11 @@ export default async function FinancePage({ searchParams }: Props) {
                       <p className="font-medium text-gray-900">{etudiant?.nom} {etudiant?.prenom}</p>
                       <p className="text-xs text-gray-400">{etudiant?.matricule}</p>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">{TYPE_LABELS[p.type] ?? p.type}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {p.type === 'scolarite'
+                        ? mensualiteLabel(mensualiteMap.get(p.id) ?? 1)
+                        : (TYPE_LABELS[p.type] ?? p.type)}
+                    </td>
                     <td className="py-3 px-4">
                       <p className="font-semibold text-gray-900">{formatMoney(Number(p.montant))}</p>
                       {Number(p.montant) < Number(p.montant_total) && (

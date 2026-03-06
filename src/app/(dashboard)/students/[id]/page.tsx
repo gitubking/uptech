@@ -86,6 +86,20 @@ export default async function StudentDetailPage({ params }: PageProps) {
   const totalTarif = tarif ? Number(tarif.mensualite) * tarif.nb_mensualites : null
   const soldeDu = totalTarif !== null ? Math.max(0, totalTarif - totalPaye) : totalAttente > 0 ? totalAttente : null
 
+  // Numérotation des mensualités (ordre chronologique)
+  const scolariteOrdered = [...paiementsList]
+    .filter(p => p.type === 'scolarite')
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  const mensualiteNum = new Map(scolariteOrdered.map((p, i) => [p.id, i + 1]))
+  function mensualiteLabel(n: number) {
+    return n === 1 ? '1ère mensualité' : `${n}ème mensualité`
+  }
+  const TYPE_LABELS_PAY: Record<string, string> = {
+    inscription: 'Inscription',
+    rattrapage: 'Rattrapage',
+    autre: 'Autre',
+  }
+
   const initials = `${student.prenom[0]}${student.nom[0]}`.toUpperCase()
   const statut = STATUT_CONFIG[student.statut] ?? { label: student.statut, color: 'bg-gray-100 text-gray-700' }
   const age = new Date().getFullYear() - new Date(student.date_naissance).getFullYear()
@@ -354,10 +368,13 @@ export default async function StudentDetailPage({ params }: PageProps) {
               {paiementsList.slice(0, 5).map((p) => {
                 const cfg = PAIEMENT_STATUT[p.statut] ?? { label: p.statut, color: 'bg-gray-100 text-gray-600' }
                 const annee = p.annee_academique as { libelle: string } | null
+                const pLabel = p.type === 'scolarite'
+                  ? mensualiteLabel(mensualiteNum.get(p.id) ?? 1)
+                  : (TYPE_LABELS_PAY[p.type] ?? p.type)
                 return (
                   <div key={p.id} className="flex items-center justify-between text-sm py-2">
                     <div>
-                      <span className="font-medium text-gray-800">{p.reference ?? p.type}</span>
+                      <span className="font-medium text-gray-800">{pLabel}</span>
                       {annee && <span className="text-xs text-gray-400 ml-2">{annee.libelle}</span>}
                     </div>
                     <div className="flex items-center gap-3">
