@@ -117,6 +117,8 @@ export async function createTeacher(
       prenom,
       email,
     })
+    // Lier l'enseignant à son compte Auth
+    await db.from('enseignants').update({ user_id: authData.user.id }).eq('id', teacher.id)
   }
 
   revalidatePath('/teachers')

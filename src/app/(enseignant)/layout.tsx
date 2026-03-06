@@ -25,7 +25,7 @@ export default async function EnseignantLayout({
   const { data: enseignant } = await supabase
     .from('enseignants')
     .select('id, nom, prenom')
-    .eq('user_id', user.id)
+    .eq('email', user.email ?? '')
     .single()
 
   const stats = enseignant ? await getDashboardStats(enseignant.id) : null
