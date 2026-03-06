@@ -38,7 +38,6 @@ export default async function ClasseDetailPage({ params }: Props) {
   if (!classe) notFound()
 
   const filiere = classe.filiere as { nom: string; code: string; type_formation?: string } | null
-  const niveau = classe.niveau as { nom: string } | null
   const annee = classe.annee_academique as { libelle: string } | null
   const etudiants = (classe.etudiants ?? []) as { id: string; matricule: string; nom: string; prenom: string; statut: string }[]
   const statut = STATUT_CONFIG[classe.statut] ?? STATUT_CONFIG['en_preparation']
@@ -83,10 +82,9 @@ export default async function ClasseDetailPage({ params }: Props) {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-1">
             <GraduationCap className="h-4 w-4 text-purple-500" />
-            <p className="text-xs text-gray-500">Niveau</p>
+            <p className="text-xs text-gray-500">Année académique</p>
           </div>
-          <p className="font-semibold text-gray-900 text-sm">{niveau?.nom}</p>
-          <p className="text-xs text-gray-400">{annee?.libelle}</p>
+          <p className="font-semibold text-gray-900 text-sm">{annee?.libelle}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-1">

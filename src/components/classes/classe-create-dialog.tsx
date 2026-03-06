@@ -8,12 +8,11 @@ import { ClasseForm } from './classe-form'
 
 interface Props {
   filieres: { id: string; nom: string; code: string; type_formation?: string | null }[]
-  niveaux: { id: string; nom: string; ordre: number; filiere_id: string }[]
   annees: { id: string; libelle: string }[]
   anneeActive?: { id: string; libelle: string } | null
 }
 
-export function ClasseCreateDialog({ filieres, niveaux, annees, anneeActive }: Props) {
+export function ClasseCreateDialog({ filieres, annees, anneeActive }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -30,7 +29,6 @@ export function ClasseCreateDialog({ filieres, niveaux, annees, anneeActive }: P
           </DialogHeader>
           <ClasseForm
             filieres={filieres}
-            niveaux={niveaux}
             annees={annees}
             anneeActive={anneeActive}
             onSuccess={() => setOpen(false)}

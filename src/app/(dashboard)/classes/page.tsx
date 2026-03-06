@@ -22,7 +22,7 @@ export default async function ClassesPage() {
     .eq('actif', true)
     .single()
 
-  const [classes, { filieres, niveaux }, { data: annees }] = await Promise.all([
+  const [classes, { filieres }, { data: annees }] = await Promise.all([
     getClasses({ annee_academique_id: anneeActive?.id }),
     getFilieresEtNiveaux(),
     supabase.from('annees_academiques').select('id, libelle').order('date_debut', { ascending: false }),
@@ -40,7 +40,6 @@ export default async function ClassesPage() {
         </div>
         <ClasseCreateDialog
           filieres={filieres as Parameters<typeof ClasseCreateDialog>[0]['filieres']}
-          niveaux={niveaux}
           annees={(annees ?? []) as Parameters<typeof ClasseCreateDialog>[0]['annees']}
           anneeActive={anneeActive}
         />
@@ -71,7 +70,6 @@ export default async function ClassesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {classes.map((c) => {
             const filiere = c.filiere as { nom: string; code: string } | null
-            const niveau = c.niveau as { nom: string } | null
             const statut = STATUT_CONFIG[c.statut] ?? STATUT_CONFIG['en_preparation']
             const nbEtudiants = Array.isArray(c.etudiants) ? c.etudiants.length : 0
             const rentree = new Date(c.date_rentree).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -92,7 +90,7 @@ export default async function ClassesPage() {
                   <div className="space-y-1.5 text-xs text-gray-500">
                     <div className="flex items-center gap-1.5">
                       <BookOpen className="h-3.5 w-3.5" />
-                      <span>{filiere?.code} — {niveau?.nom}</span>
+                      <span>{filiere?.code} — {filiere?.nom}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" />

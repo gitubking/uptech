@@ -17,7 +17,6 @@ export async function getClasses(filters?: {
     .select(`
       *,
       filiere:filieres(id, nom, code, type_formation),
-      niveau:niveaux(id, nom, ordre),
       annee_academique:annees_academiques(id, libelle)
     `)
     .order('date_rentree', { ascending: false })
@@ -39,7 +38,6 @@ export async function getClasseById(id: string) {
     .select(`
       *,
       filiere:filieres(id, nom, code, type_formation),
-      niveau:niveaux(id, nom, ordre),
       annee_academique:annees_academiques(id, libelle),
       etudiants(id, matricule, nom, prenom, statut, photo_url)
     `)
@@ -49,14 +47,15 @@ export async function getClasseById(id: string) {
   return data
 }
 
-// ─── Récupérer filières + niveaux pour les selects ────────────────────────────
+// ─── Récupérer les filières pour les selects ──────────────────────────────────
 export async function getFilieresEtNiveaux() {
   const supabase = await createClient()
-  const [{ data: filieres }, { data: niveaux }] = await Promise.all([
-    supabase.from('filieres').select('id, nom, code, type_formation').eq('actif', true).order('nom'),
-    supabase.from('niveaux').select('id, nom, ordre, filiere_id').order('ordre'),
-  ])
-  return { filieres: filieres ?? [], niveaux: niveaux ?? [] }
+  const { data: filieres } = await supabase
+    .from('filieres')
+    .select('id, nom, code, type_formation')
+    .eq('actif', true)
+    .order('nom')
+  return { filieres: filieres ?? [], niveaux: [] }
 }
 
 // ─── Créer une classe ─────────────────────────────────────────────────────────
@@ -66,17 +65,16 @@ export async function createClasse(formData: FormData) {
   const nom = formData.get('nom') as string
   const code = formData.get('code') as string
   const filiere_id = formData.get('filiere_id') as string
-  const niveau_id = formData.get('niveau_id') as string
   const annee_academique_id = formData.get('annee_academique_id') as string
   const date_rentree = formData.get('date_rentree') as string
   const capacite = parseInt(formData.get('capacite') as string) || 30
 
-  if (!nom || !code || !filiere_id || !niveau_id || !annee_academique_id || !date_rentree) {
+  if (!nom || !code || !filiere_id || !annee_academique_id || !date_rentree) {
     return { error: 'Tous les champs obligatoires doivent être remplis' }
   }
 
   const { error } = await db.from('classes').insert({
-    nom, code, filiere_id, niveau_id, annee_academique_id, date_rentree, capacite,
+    nom, code, filiere_id, annee_academique_id, date_rentree, capacite,
   })
 
   if (error) {

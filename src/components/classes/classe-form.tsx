@@ -16,13 +16,6 @@ interface Filiere {
   type_formation?: string | null
 }
 
-interface Niveau {
-  id: string
-  nom: string
-  ordre: number
-  filiere_id: string
-}
-
 interface AnneeAcademique {
   id: string
   libelle: string
@@ -30,7 +23,6 @@ interface AnneeAcademique {
 
 interface Props {
   filieres: Filiere[]
-  niveaux: Niveau[]
   annees: AnneeAcademique[]
   anneeActive?: AnneeAcademique | null
   onSuccess?: () => void
@@ -42,24 +34,38 @@ const TYPE_LABELS: Record<string, string> = {
   acceleree: 'Accélérée',
 }
 
-export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }: Props) {
+export function ClasseForm({ filieres, annees, anneeActive, onSuccess }: Props) {
   const router = useRouter()
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [typeFormation, setTypeFormation] = useState('')
   const [filiereId, setFiliereId] = useState('')
-  const [niveauId, setNiveauId] = useState('')
   const [anneeId, setAnneeId] = useState(anneeActive?.id ?? '')
 
-  const niveauxFiltres = niveaux.filter(n => n.filiere_id === filiereId)
-  const filiereSelectionnee = filieres.find(f => f.id === filiereId)
-  const niveauSelectionne = niveaux.find(n => n.id === niveauId)
+  const filteredFilieres = typeFormation
+    ? filieres.filter(f => f.type_formation === typeFormation)
+    : filieres
 
-  // Auto-générer le code
+  const filiereSelectionnee = filieres.find(f => f.id === filiereId)
+
   function genererCode(dateRentree: string) {
-    if (!filiereSelectionnee || !niveauSelectionne || !dateRentree) return ''
-    const [annee, mois] = dateRentree.split('-')
-    const moisCourt = new Date(dateRentree).toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '')
-    return `${filiereSelectionnee.code}-N${niveauSelectionne.ordre}-${moisCourt}${annee?.slice(2)}`
+    if (!filiereSelectionnee || !dateRentree) return ''
+    const d = new Date(dateRentree)
+    const moisCourt = d.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '')
+    const annee = String(d.getFullYear()).slice(2)
+    return `${filiereSelectionnee.code}-${moisCourt}${annee}`
+  }
+
+  function onDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const code = genererCode(e.target.value)
+    const form = e.target.form
+    const nomInput = form?.querySelector('[name="nom"]') as HTMLInputElement | null
+    const codeInput = form?.querySelector('[name="code"]') as HTMLInputElement | null
+    if (code && codeInput && !codeInput.dataset.modified) codeInput.value = code
+    if (filiereSelectionnee && nomInput && !nomInput.dataset.modified) {
+      const label = new Date(e.target.value).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+      nomInput.value = `${filiereSelectionnee.code} — ${label}`
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -69,7 +75,6 @@ export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }
     try {
       const fd = new FormData(e.currentTarget)
       fd.set('filiere_id', filiereId)
-      fd.set('niveau_id', niveauId)
       fd.set('annee_academique_id', anneeId)
       const result = await createClasse(fd)
       if (result.error) {
@@ -92,35 +97,35 @@ export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }
         </div>
       )}
 
-      {/* Filière + Niveau */}
+      {/* Type de formation → Filière */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Filière <span className="text-red-500">*</span></Label>
-          <Select value={filiereId || 'none'} onValueChange={v => { setFiliereId(v === 'none' ? '' : v); setNiveauId('') }}>
+          <Label>Type de formation</Label>
+          <Select value={typeFormation || 'all'} onValueChange={v => {
+            setTypeFormation(v === 'all' ? '' : v)
+            setFiliereId('')
+          }}>
             <SelectTrigger className="h-10">
-              <SelectValue placeholder="Sélectionner" />
+              <SelectValue placeholder="Tous types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Sélectionner une filière</SelectItem>
-              {filieres.map(f => (
-                <SelectItem key={f.id} value={f.id}>
-                  {f.code} — {f.nom}
-                  {f.type_formation && <span className="ml-1 text-gray-400 text-xs">({TYPE_LABELS[f.type_formation] ?? f.type_formation})</span>}
-                </SelectItem>
+              <SelectItem value="all">Tous types</SelectItem>
+              {Object.entries(TYPE_LABELS).map(([val, label]) => (
+                <SelectItem key={val} value={val}>{label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Niveau <span className="text-red-500">*</span></Label>
-          <Select value={niveauId || 'none'} onValueChange={v => setNiveauId(v === 'none' ? '' : v)} disabled={!filiereId}>
+          <Label>Filière <span className="text-red-500">*</span></Label>
+          <Select value={filiereId || 'none'} onValueChange={v => setFiliereId(v === 'none' ? '' : v)}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Sélectionner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Sélectionner un niveau</SelectItem>
-              {niveauxFiltres.map(n => (
-                <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+              <SelectItem value="none">Sélectionner une filière</SelectItem>
+              {filteredFilieres.map(f => (
+                <SelectItem key={f.id} value={f.id}>{f.code} — {f.nom}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -150,17 +155,7 @@ export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }
             type="date"
             required
             className="h-10"
-            onChange={e => {
-              const code = genererCode(e.target.value)
-              const nomInput = e.target.form?.querySelector('[name="nom"]') as HTMLInputElement
-              const codeInput = e.target.form?.querySelector('[name="code"]') as HTMLInputElement
-              if (code && codeInput && !codeInput.dataset.modified) codeInput.value = code
-              if (filiereSelectionnee && niveauSelectionne && nomInput && !nomInput.dataset.modified) {
-                const d = new Date(e.target.value)
-                const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-                nomInput.value = `${filiereSelectionnee.code} ${niveauSelectionne.nom} — ${label}`
-              }
-            }}
+            onChange={onDateChange}
           />
         </div>
       </div>
@@ -172,7 +167,7 @@ export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }
           <Input
             name="nom"
             required
-            placeholder="ex: BTS1 Informatique — octobre 2025"
+            placeholder="ex: INFO — octobre 2025"
             className="h-10"
             onInput={e => (e.currentTarget.dataset.modified = 'true')}
           />
@@ -182,7 +177,7 @@ export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }
           <Input
             name="code"
             required
-            placeholder="ex: INFO-N1-OCT25"
+            placeholder="ex: INFO-OCT25"
             className="h-10 font-mono"
             onInput={e => (e.currentTarget.dataset.modified = 'true')}
           />
@@ -202,7 +197,7 @@ export function ClasseForm({ filieres, niveaux, annees, anneeActive, onSuccess }
         </Button>
         <Button
           type="submit"
-          disabled={isPending || !filiereId || !niveauId || !anneeId}
+          disabled={isPending || !filiereId || !anneeId}
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           {isPending ? 'Création…' : 'Créer la classe'}
