@@ -24,12 +24,12 @@ export default async function EmargerPage() {
   // Dédoublonner par matière pour le formulaire d'émargement
   const seenM = new Set<string>()
   const matieres = (programmes ?? []).filter((p) => {
-    const m = p.matiere as { id: string } | null
+    const m = p.matiere as unknown as { id: string } | null
     if (!m || seenM.has(m.id)) return false
     seenM.add(m.id)
     return true
   }).map((p) => ({
-    ...(p.matiere as { id: string; code: string; nom: string }),
+    ...(p.matiere as unknown as { id: string; code: string; nom: string }),
     enseignant_id: p.enseignant_id,
     volume_horaire: p.volume_horaire,
     filiere: p.filiere as { code: string; nom: string } | null,
