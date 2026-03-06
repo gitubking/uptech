@@ -43,6 +43,9 @@ export default async function DashboardLayout({
     .eq('user_id', user.id)
     .single()
 
+  // Les enseignants ont leur propre espace dédié
+  if (profile?.role === 'enseignant') redirect('/enseignant/dashboard')
+
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') ?? ''
   const role = profile?.role ?? ''
