@@ -20,7 +20,7 @@ export function AnneeScolaireFilter({ annees, selected }: Props) {
 
   function onChange(value: string) {
     const params = new URLSearchParams(searchParams.toString())
-    if (value) {
+    if (value && value !== 'all') {
       params.set('annee', value)
     } else {
       params.delete('annee')
@@ -33,14 +33,14 @@ export function AnneeScolaireFilter({ annees, selected }: Props) {
   return (
     <div className="flex items-center gap-2 text-sm text-gray-500">
       <span className="text-xs text-gray-400">Année scolaire</span>
-      <Select value={selected} onValueChange={onChange}>
+      <Select value={selected || 'all'} onValueChange={onChange}>
         <SelectTrigger className="h-9 w-36 text-sm border-gray-200 bg-white">
           <SelectValue placeholder="Toutes">
             {selectedAnnee?.libelle ?? 'Toutes'}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Toutes</SelectItem>
+          <SelectItem value="all">Toutes</SelectItem>
           {annees.map(a => (
             <SelectItem key={a.id} value={a.id}>
               {a.libelle}
