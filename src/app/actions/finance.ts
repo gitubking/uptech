@@ -113,7 +113,7 @@ export async function getEtudiantsForFinance() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('etudiants')
-    .select('id, matricule, nom, prenom, filiere_id, niveau_id, annee_academique_id, filiere:filieres(nom, code), niveau:niveaux(nom)')
+    .select('id, matricule, nom, prenom, filiere_id, niveau_id, annee_academique_id, filiere:filieres(nom, code, type_formation), niveau:niveaux(nom)')
     .eq('statut', 'inscrit')
     .order('nom', { ascending: true })
   if (error) throw error

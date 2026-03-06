@@ -19,8 +19,14 @@ interface Etudiant {
   prenom: string
   annee_academique_id: string
   filiere_id: string
-  filiere: { nom: string; code: string } | null
+  filiere: { nom: string; code: string; type_formation?: string | null } | null
   niveau: { nom: string } | null
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  academique: 'Académique',
+  certifiante: 'Certifiante',
+  acceleree: 'Accélérée',
 }
 
 interface AnneeAcademique {
@@ -64,10 +70,27 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
   const router = useRouter()
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [typeFormation, setTypeFormation] = useState('')
+  const [filiereFilter, setFiliereFilter] = useState('')
   const [etudiantId, setEtudiantId] = useState('')
   const [type, setType] = useState('scolarite')
   const [mode, setMode] = useState('especes')
   const [anneeId, setAnneeId] = useState(anneeActive?.id ?? '')
+
+  // Filières uniques extraites des étudiants
+  const filieres = Array.from(
+    new Map(etudiants.map(e => [e.filiere_id, e.filiere])).entries()
+  ).map(([id, f]) => ({ id, ...f }))
+
+  const filteredFilieres = typeFormation
+    ? filieres.filter(f => f?.type_formation === typeFormation)
+    : filieres
+
+  const filteredEtudiants = etudiants.filter(e => {
+    if (typeFormation && e.filiere?.type_formation !== typeFormation) return false
+    if (filiereFilter && e.filiere_id !== filiereFilter) return false
+    return true
+  })
 
   const selectedEtudiant = etudiants.find((e) => e.id === etudiantId)
   const tarif = selectedEtudiant
@@ -123,6 +146,43 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Type de formation</Label>
+              <Select value={typeFormation || 'all'} onValueChange={(v) => {
+                setTypeFormation(v === 'all' ? '' : v)
+                setFiliereFilter('')
+                setEtudiantId('')
+              }}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Tous types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous types</SelectItem>
+                  {Object.entries(TYPE_LABELS).map(([val, label]) => (
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Filière</Label>
+              <Select value={filiereFilter || 'all'} onValueChange={(v) => {
+                setFiliereFilter(v === 'all' ? '' : v)
+                setEtudiantId('')
+              }}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Toutes les filières" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les filières</SelectItem>
+                  {filteredFilieres.map(f => (
+                    <SelectItem key={f.id} value={f.id}>{f?.code} — {f?.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label>Étudiant <span className="text-red-500">*</span></Label>
             <Select value={etudiantId || 'none'} onValueChange={(v) => setEtudiantId(v === 'none' ? '' : v)} required>
@@ -131,7 +191,7 @@ export function PaiementForm({ etudiants, anneeActive, tarifs = [] }: Props) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Sélectionner un étudiant</SelectItem>
-                {etudiants.map((e) => (
+                {filteredEtudiants.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.matricule} — {e.nom} {e.prenom}
                   </SelectItem>
