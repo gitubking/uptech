@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { TeacherActions } from '@/components/teachers/teacher-actions'
+import { AssignProgrammeDialog } from '@/components/teachers/assign-programme-dialog'
+import { createClient } from '@/lib/supabase/server'
 import {
   ArrowLeft, Pencil, User, Phone,
   Mail, Calendar, Briefcase, BookOpen, GraduationCap
@@ -27,6 +29,12 @@ export default async function TeacherDetailPage({ params }: PageProps) {
   } catch {
     notFound()
   }
+
+  const supabase = await createClient()
+  const [{ data: filieres }, { data: annees }] = await Promise.all([
+    supabase.from('filieres').select('id, nom, code, type_formation').eq('actif', true).order('nom'),
+    supabase.from('annees_academiques').select('id, libelle, actif').order('libelle', { ascending: false }),
+  ])
 
   const initials = `${teacher.prenom[0]}${teacher.nom[0]}`.toUpperCase()
   const contrat = CONTRAT_CONFIG[teacher.type_contrat] ?? { label: teacher.type_contrat, color: 'bg-gray-100 text-gray-700' }
@@ -160,9 +168,17 @@ export default async function TeacherDetailPage({ params }: PageProps) {
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-green-600" />
                 Matières enseignées
-                <span className="ml-auto text-xs font-normal text-gray-400">
-                  {programme.length} matière{programme.length > 1 ? 's' : ''}
+                <span className="text-xs font-normal text-gray-400">
+                  ({programme.length})
                 </span>
+                <div className="ml-auto">
+                  <AssignProgrammeDialog
+                    enseignantId={id}
+                    enseignantNom={`${teacher.nom} ${teacher.prenom}`}
+                    filieres={(filieres ?? []) as { id: string; nom: string; code: string; type_formation: string }[]}
+                    annees={(annees ?? []) as { id: string; libelle: string; actif: boolean }[]}
+                  />
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>

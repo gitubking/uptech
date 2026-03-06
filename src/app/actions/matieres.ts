@@ -174,6 +174,18 @@ export async function updateProgrammeEntry(id: string, formData: FormData) {
   return { success: true }
 }
 
+export async function assignEnseignantProgramme(programme_id: string, enseignant_id: string | null) {
+  const db = createAdminClient()
+  const { error } = await db
+    .from('programme')
+    .update({ enseignant_id: enseignant_id || null })
+    .eq('id', programme_id)
+  if (error) return { error: error.message }
+  revalidatePath('/matieres')
+  revalidatePath('/teachers')
+  return { success: true }
+}
+
 export async function removeMatiereduProgramme(id: string) {
   const db = createAdminClient()
   const { error } = await db.from('programme').delete().eq('id', id)
